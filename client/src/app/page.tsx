@@ -1,101 +1,188 @@
-import Image from "next/image";
+'use client'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import Header from '@/components/layout/Header'
+import CategoryNav from '@/components/layout/CategoryNav'
+import ProductCard from '@/components/product/ProductCard'
+import ProductSkeleton from '@/components/product/ProductSkeleton'
+import FilterSidebar from '@/components/product/FilterSidebar'
+import { useProducts } from '@/hooks/useProducts'
+import { ProductFilters } from '@/types'
+import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
 
-export default function Home() {
+function HomePage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [showFilters, setShowFilters] = useState(false)
+
+  const [filters, setFilters] = useState<ProductFilters>({
+    category: searchParams.get('category') || undefined,
+    q: searchParams.get('q') || undefined,
+    sort: (searchParams.get('sort') as ProductFilters['sort']) || undefined,
+    page: Number(searchParams.get('page')) || 1,
+    limit: 20,
+  })
+
+  // Sync URL → filters
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      category: searchParams.get('category') || undefined,
+      q: searchParams.get('q') || undefined,
+      page: Number(searchParams.get('page')) || 1,
+    }))
+  }, [searchParams])
+
+  const updateFilters = (updates: Partial<ProductFilters>) => {
+    const next = { ...filters, ...updates }
+    setFilters(next)
+    const params = new URLSearchParams()
+    if (next.category) params.set('category', next.category)
+    if (next.q) params.set('q', next.q)
+    if (next.page && next.page > 1) params.set('page', String(next.page))
+    if (next.sort) params.set('sort', next.sort)
+    router.push(`/?${params.toString()}`, { scroll: false })
+  }
+
+  const { data, isLoading } = useProducts(filters)
+  const products = data?.data ?? []
+  const total = data?.total ?? 0
+  const totalPages = data?.totalPages ?? 1
+  const page = filters.page ?? 1
+
+  const activeFiltersCount = [filters.category, filters.minPrice, filters.maxPrice, filters.rating, filters.brand]
+    .filter(Boolean).length
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-[#f1f3f6]">
+      <Header />
+      <CategoryNav />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <main className="max-w-7xl mx-auto px-4 py-4">
+        {/* Search query banner */}
+        {filters.q && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">
+            <span>Showing results for <strong className="text-gray-900">"{filters.q}"</strong></span>
+            <button onClick={() => updateFilters({ q: undefined, page: 1 })} className="text-[#2874f0] hover:underline">Clear</button>
+          </div>
+        )}
+
+        {/* Mobile filter toggle */}
+        <div className="md:hidden mb-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 text-sm font-medium text-[#2874f0] border border-[#2874f0] px-3 py-1.5 rounded"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <SlidersHorizontal size={16} />
+            Filters {activeFiltersCount > 0 && <span className="bg-[#2874f0] text-white text-xs rounded-full px-1.5">{activeFiltersCount}</span>}
+          </button>
+        </div>
+
+        <div className="flex gap-4">
+          {/* Sidebar — desktop */}
+          <div className="hidden md:block w-64 shrink-0">
+            <FilterSidebar filters={filters} onFilterChange={updateFilters} />
+          </div>
+
+          {/* Mobile sidebar overlay */}
+          {showFilters && (
+            <div className="fixed inset-0 z-50 md:hidden">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+              <div className="absolute left-0 top-0 h-full w-72 bg-white overflow-y-auto p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-semibold text-gray-800">Filters</h2>
+                  <button onClick={() => setShowFilters(false)}><X size={20} /></button>
+                </div>
+                <FilterSidebar filters={filters} onFilterChange={(f) => { updateFilters(f); setShowFilters(false) }} />
+              </div>
+            </div>
+          )}
+
+          {/* Product Grid */}
+          <div className="flex-1 min-w-0">
+            {/* Results count + sort */}
+            <div className="card px-4 py-2 mb-3 flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                {isLoading ? '…' : <><strong>{total}</strong> products found</>}
+              </p>
+              <div className="hidden md:flex items-center gap-2 text-sm">
+                <span className="text-gray-500">Sort by:</span>
+                <select
+                  value={filters.sort || ''}
+                  onChange={e => updateFilters({ sort: (e.target.value as ProductFilters['sort']) || undefined, page: 1 })}
+                  className="text-sm border-0 outline-none text-[#2874f0] font-medium cursor-pointer bg-transparent"
+                >
+                  <option value="">Relevance</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                  <option value="newest">Newest</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Array.from({ length: 12 }).map((_, i) => <ProductSkeleton key={i} />)}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="card flex flex-col items-center justify-center py-20 gap-3">
+                <span className="text-5xl">🔍</span>
+                <p className="text-lg font-semibold text-gray-700">No products found</p>
+                <p className="text-sm text-gray-500">Try adjusting your filters or search term</p>
+                <button onClick={() => updateFilters({ category: undefined, q: undefined, minPrice: undefined, maxPrice: undefined, rating: undefined, page: 1 })}
+                  className="btn-outline mt-2">
+                  Clear Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {products.map(p => <ProductCard key={p.id} product={p} />)}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1 mt-6">
+                <button
+                  onClick={() => updateFilters({ page: page - 1 })}
+                  disabled={page === 1}
+                  className="p-2 rounded hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => updateFilters({ page: p })}
+                    className={`w-9 h-9 rounded text-sm font-medium transition-colors ${
+                      page === p ? 'bg-[#2874f0] text-white' : 'hover:bg-white text-gray-700'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => updateFilters({ page: page + 1 })}
+                  disabled={page === totalPages}
+                  className="p-2 rounded hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <HomePage />
+    </Suspense>
+  )
 }

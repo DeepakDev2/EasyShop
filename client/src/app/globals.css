@@ -1,27 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary: #2874f0;
+  --primary-dark: #1a5dc9;
+  --yellow: #FFE500;
+  --green: #388e3c;
+  --orange: #ff6161;
+  --bg: #f1f3f6;
+  --card: #ffffff;
+  --text: #212121;
+  --muted: #878787;
+  --border: #e0e0e0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer components {
+  /* ── Card ── */
+  .card { @apply bg-white rounded shadow-sm; }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply bg-[#ff9f00] text-white font-semibold px-8 py-3 rounded-sm
+           hover:bg-[#e8900a] transition-colors duration-200 cursor-pointer;
   }
+  .btn-secondary {
+    @apply bg-[#fb641b] text-white font-semibold px-8 py-3 rounded-sm
+           hover:bg-[#e4571a] transition-colors duration-200 cursor-pointer;
+  }
+  .btn-outline {
+    @apply border border-[#2874f0] text-[#2874f0] font-semibold px-6 py-2 rounded-sm
+           hover:bg-blue-50 transition-colors duration-200 cursor-pointer;
+  }
+
+  /* ── Badge ── */
+  .badge-discount {
+    @apply text-xs font-semibold text-[#388e3c] bg-transparent;
+  }
+  .badge-offer {
+    @apply text-xs font-medium text-[#878787];
+  }
+
+  /* ── Input ── */
+  .input-base {
+    @apply w-full px-3 py-2 border border-[#e0e0e0] rounded-sm text-sm
+           focus:outline-none focus:border-[#2874f0] transition-colors;
+  }
+
+  /* ── Star Rating ── */
+  .star-badge {
+    @apply inline-flex items-center gap-1 text-xs font-semibold text-white
+           px-1.5 py-0.5 rounded;
+  }
+  .star-badge-good  { @apply bg-[#388e3c]; }
+  .star-badge-avg   { @apply bg-[#ff9f00]; }
+  .star-badge-bad   { @apply bg-[#ff6161]; }
+
+  /* ── Skeleton ── */
+  .skeleton { @apply bg-gray-200 animate-pulse rounded; }
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+/* Category Nav horizontal scroll hide scrollbar */
+.hide-scrollbar { scrollbar-width: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
