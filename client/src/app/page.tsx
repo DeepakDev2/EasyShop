@@ -4,12 +4,13 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import CategoryNav from '@/components/layout/CategoryNav'
 import Footer from '@/components/layout/Footer'
+import HeroBanner from '@/components/layout/HeroBanner'
 import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import FilterSidebar from '@/components/product/FilterSidebar'
 import { useProducts } from '@/hooks/useProducts'
 import { ProductFilters } from '@/types'
-import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, SlidersHorizontal, X, TrendingUp } from 'lucide-react'
 
 function HomePage() {
   const searchParams = useSearchParams()
@@ -61,12 +62,33 @@ function HomePage() {
   const activeFiltersCount = [filters.category, filters.minPrice, filters.maxPrice, filters.rating, filters.brand]
     .filter(Boolean).length
 
+  const { data: dealsData } = useProducts({ sort: 'price_asc', limit: 8, page: 1 })
+  const deals = dealsData?.data ?? []
+
   return (
     <div className="min-h-screen bg-[#f1f3f6]">
       <Header />
       <CategoryNav />
 
       <main className="max-w-7xl mx-auto px-4 py-4">
+        {/* Hero Banner */}
+        <HeroBanner />
+
+        {/* Top Deals horizontal strip */}
+        {deals.length > 0 && (
+          <div className="card p-4 mb-4">
+            <h2 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-3">
+              <TrendingUp size={18} className="text-[#fb641b]" /> Top Deals
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {deals.map(p => (
+                <div key={p.id} className="shrink-0 w-36">
+                  <ProductCard product={p} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Search query banner */}
         {filters.q && (
           <div className="mb-4 flex items-center gap-2 text-sm text-gray-600">

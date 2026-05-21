@@ -90,20 +90,29 @@ export default function ProductDetailPage() {
 
             {/* Action buttons */}
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => { addItem(product, qty); toast.success('Added to cart!', { icon: '🛒' }); }}
-                disabled={product.stock === 0}
-                className="flex-1 flex items-center justify-center gap-2 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart size={18} /> ADD TO CART
-              </button>
-              <button
-                onClick={() => { addItem(product, qty); router.push('/cart') }}
-                disabled={product.stock === 0}
-                className="flex-1 flex items-center justify-center gap-2 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Zap size={18} /> BUY NOW
-              </button>
+              {product.stock > 0 ? (
+                <>
+                  <button
+                    onClick={() => { addItem(product, qty); toast.success('Added to cart!', { icon: '🛒' }); }}
+                    className="flex-1 flex items-center justify-center gap-2 btn-primary"
+                  >
+                    <ShoppingCart size={18} /> ADD TO CART
+                  </button>
+                  <button
+                    onClick={() => { addItem(product, qty); router.push('/cart') }}
+                    className="flex-1 flex items-center justify-center gap-2 btn-secondary"
+                  >
+                    <Zap size={18} /> BUY NOW
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => toast('We\'ll notify you when this is back in stock! 🔔', { icon: '🔔', duration: 4000 })}
+                  className="flex-1 flex items-center justify-center gap-2 btn-outline py-3"
+                >
+                  🔔 Notify Me When Available
+                </button>
+              )}
             </div>
           </div>
 

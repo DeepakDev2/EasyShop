@@ -7,7 +7,8 @@ import Header from '@/components/layout/Header'
 import { useAuthStore } from '@/store/authStore'
 import { formatPrice, formatDate } from '@/lib/utils'
 import api from '@/lib/api'
-import { Package, MapPin, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Package, MapPin, ChevronRight, ArrowLeft, XCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const STATUS_STEPS = ['placed', 'confirmed', 'shipped', 'delivered']
 const STATUS_COLORS: Record<string, string> = {
@@ -24,11 +25,24 @@ export default function OrderDetailPage() {
   const { isLoggedIn } = useAuthStore()
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) { router.push('/auth/login'); return }
     api.get(`/orders/${id}`).then(r => setOrder(r.data.data)).catch(() => router.push('/orders')).finally(() => setLoading(false))
   }, [id, isLoggedIn, router])
+
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel this order?')) return
+    setCancelling(true)
+    try {
+      const res = await api.put(`/orders/${id}/cancel`)
+      setOrder(res.data.data)
+      toast.success('Order cancelled successfully')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'Failed to cancel order')
+    } finally { setCancelling(false) }
+  }
 
   if (loading) return (
     <div className="min-h-screen bg-[#f1f3f6]">
@@ -139,6 +153,22 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Cancel Order */}
+        {['placed', 'confirmed'].includes(order.status) && (
+          <div className="card p-4 mt-3">
+            <h2 className="text-sm font-semibold text-gray-700 mb-2">Need to cancel?</h2>
+            <p className="text-xs text-gray-400 mb-3">You can cancel this order as it hasn't shipped yet. Stock will be restored.</p>
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 px-4 py-2 rounded transition-colors disabled:opacity-50"
+            >
+              <XCircle size={16} />
+              {cancelling ? 'Cancelling…' : 'Cancel Order'}
+            </button>
+          </div>
+        )}
       </main>
     </div>
   )

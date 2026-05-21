@@ -103,3 +103,29 @@ export const getOrderById = async (orderId: number, userId: number) => {
   if (order.userId !== userId) throw createError('Access denied', 403, 'FORBIDDEN')
   return order
 }
+
+export const cancelOrder = async (orderId: number, userId: number) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { orderItems: true },
+  })
+  if (!order) throw createError('Order not found', 404, 'NOT_FOUND')
+  if (order.userId !== userId) throw createError('Access denied', 403, 'FORBIDDEN')
+  if (!['placed', 'confirmed'].includes(order.status))
+    throw createError('Order cannot be cancelled at this stage', 400, 'CANNOT_CANCEL')
+
+  // Restore stock and update status in a single transaction
+  const updated = await prisma.$transaction(async (tx) => {
+    for (const item of order.orderItems) {
+      await tx.product.update({
+        where: { id: item.productId! },
+        data: { stock: { increment: item.quantity } },
+      })
+    }
+    return tx.order.update({
+      where: { id: orderId },
+      data: { status: 'cancelled', paymentStatus: 'refunded' },
+    })
+  })
+  return updated
+}

@@ -1,13 +1,22 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Plus, Trash2, Heart } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useCartStore, CartEntry } from '@/store/cartStore'
+import { useWishlistStore } from '@/store/wishlistStore'
 import { formatPrice } from '@/lib/utils'
 
 export default function CartItem({ entry }: { entry: CartEntry }) {
   const { updateQty, removeItem } = useCartStore()
+  const { toggle, isWished } = useWishlistStore()
   const { product, qty } = entry
+
+  const handleSaveForLater = async () => {
+    removeItem(product.id)
+    const added = await toggle(product.id)
+    if (added) toast('Saved to Wishlist ❤️', { icon: '❤️' })
+  }
 
   return (
     <div className="card p-4 flex gap-4">
@@ -35,8 +44,8 @@ export default function CartItem({ entry }: { entry: CartEntry }) {
           )}
         </div>
 
-        {/* Quantity Controls + Remove */}
-        <div className="flex items-center gap-4 mt-3">
+        {/* Quantity Controls + Actions */}
+        <div className="flex items-center gap-4 mt-3 flex-wrap">
           <div className="flex items-center border border-gray-300 rounded-sm overflow-hidden">
             <button
               onClick={() => updateQty(product.id, qty - 1)}
@@ -54,11 +63,22 @@ export default function CartItem({ entry }: { entry: CartEntry }) {
               <Plus size={13} />
             </button>
           </div>
+
           <button
             onClick={() => removeItem(product.id)}
             className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors"
           >
             <Trash2 size={13} /> Remove
+          </button>
+
+          <button
+            onClick={handleSaveForLater}
+            className={`flex items-center gap-1 text-xs transition-colors ${
+              isWished(product.id) ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+            }`}
+          >
+            <Heart size={13} className={isWished(product.id) ? 'fill-red-500' : ''} />
+            {isWished(product.id) ? 'Wishlisted' : 'Save for Later'}
           </button>
         </div>
       </div>

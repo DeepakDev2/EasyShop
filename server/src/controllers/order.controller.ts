@@ -31,3 +31,13 @@ export const getOrder = [
     res.json({ success: true, data: order })
   }),
 ]
+
+export const cancelOrder = [
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    const orderId = parseInt(req.params.id)
+    if (isNaN(orderId)) throw createError('Invalid order ID', 400, 'BAD_REQUEST')
+    const order = await orderService.cancelOrder(orderId, req.user!.id)
+    res.json({ success: true, data: order, message: 'Order cancelled successfully' })
+  }),
+]
