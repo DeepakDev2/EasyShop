@@ -1,5 +1,8 @@
 import dotenv from 'dotenv'
-dotenv.config()
+import path from 'path'
+
+// Always load server/.env regardless of process cwd (monorepo root vs server/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') })
 
 const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET']
 
@@ -21,6 +24,8 @@ export const env = {
   EMAIL_USER: process.env.EMAIL_USER || '',
   EMAIL_PASS: process.env.EMAIL_PASS || '',
   EMAIL_FROM: process.env.EMAIL_FROM || 'EasyShop <noreply@easyshop.com>',
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+  RESEND_FROM: process.env.RESEND_FROM || 'onboarding@resend.dev',
   UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '5242880', 10),
   IS_PRODUCTION: process.env.NODE_ENV === 'production',

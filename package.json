@@ -8,7 +8,8 @@
     "dev:server": "pnpm --filter server dev",
     "dev:client": "pnpm --filter client dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "db:setup": "pnpm --filter server exec prisma db push && pnpm --filter server prisma:seed"
   },
   "engines": {
     "node": ">=18.0.0",

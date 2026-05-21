@@ -1,5 +1,4 @@
 'use client'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useCategories } from '@/hooks/useCategories'
 import { ProductFilters } from '@/types'
 
@@ -31,6 +30,16 @@ export default function FilterSidebar({ filters, onFilterChange }: Props) {
       <div>
         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Category</h4>
         <div className="space-y-1.5">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="radio"
+              name="category"
+              checked={!filters.category}
+              onChange={() => onFilterChange({ category: undefined, page: 1 })}
+              className="accent-[#2874f0]"
+            />
+            <span className="text-sm text-gray-700 group-hover:text-[#2874f0] transition-colors">All Products</span>
+          </label>
           {categories.map(cat => (
             <label key={cat.id} className="flex items-center gap-2 cursor-pointer group">
               <input

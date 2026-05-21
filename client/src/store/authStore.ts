@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import api from '@/lib/api'
+import { setToken, clearToken } from '@/lib/token'
 
 export interface AuthUser {
   id: number
@@ -19,12 +20,14 @@ interface AuthStore {
   logout: () => void
 }
 
-const setTokenCookie = (token: string) => {
-  document.cookie = `easyshop_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+async function getGuestCart() {
+  const { useCartStore } = await import('@/store/cartStore')
+  return useCartStore.getState().items.map(i => ({ productId: i.product.id, quantity: i.qty }))
 }
 
-const clearTokenCookie = () => {
-  document.cookie = 'easyshop_token=; path=/; max-age=0; SameSite=Lax'
+async function reloadCartFromServer() {
+  const { useCartStore } = await import('@/store/cartStore')
+  await useCartStore.getState().loadFromServer()
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -35,27 +38,42 @@ export const useAuthStore = create<AuthStore>()(
       isLoggedIn: false,
 
       login: async (email, password) => {
-        const res = await api.post('/auth/login', { email, password })
+        const res = await api.post('/auth/login', {
+          email,
+          password,
+          guestCart: await getGuestCart(),
+        })
         const { user, token } = res.data
-        localStorage.setItem('easyshop_token', token)
-        setTokenCookie(token)
+        setToken(token)
         set({ user, token, isLoggedIn: true })
+        await reloadCartFromServer()
       },
 
       register: async (name, email, password, phone) => {
-        const res = await api.post('/auth/register', { name, email, password, phone })
+        const res = await api.post('/auth/register', {
+          name,
+          email,
+          password,
+          phone,
+          guestCart: await getGuestCart(),
+        })
         const { user, token } = res.data
-        localStorage.setItem('easyshop_token', token)
-        setTokenCookie(token)
+        setToken(token)
         set({ user, token, isLoggedIn: true })
+        await reloadCartFromServer()
       },
 
       logout: () => {
-        localStorage.removeItem('easyshop_token')
-        clearTokenCookie()
+        clearToken()
         set({ user: null, token: null, isLoggedIn: false })
       },
     }),
-    { name: 'easyshop-auth', partialize: (s) => ({ user: s.user, token: s.token, isLoggedIn: s.isLoggedIn }) }
+    {
+      name: 'easyshop-auth',
+      partialize: (s) => ({ user: s.user, token: s.token, isLoggedIn: s.isLoggedIn }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) setToken(state.token)
+      },
+    }
   )
 )

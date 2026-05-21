@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import { asyncHandler } from '../middleware/errorHandler'
 import { authenticate } from '../middleware/auth'
+import { validate } from '../middleware/validate'
+import { addressSchema } from '../schemas/address.schema'
 import * as addressService from '../services/address.service'
 
 export const getAddresses = [
@@ -13,6 +15,7 @@ export const getAddresses = [
 
 export const addAddress = [
   authenticate,
+  validate(addressSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const address = await addressService.createAddress(req.user!.id, req.body)
     res.status(201).json({ success: true, data: address })

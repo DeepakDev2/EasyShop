@@ -38,6 +38,8 @@ import authRoutes from './routes/auth.routes'
 import orderRoutes from './routes/order.routes'
 import wishlistRoutes from './routes/wishlist.routes'
 import addressRoutes from './routes/address.routes'
+import cartRoutes from './routes/cart.routes'
+import pincodeRoutes from './routes/pincode.routes'
 
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/products', productRoutes)
@@ -45,6 +47,8 @@ app.use('/api/v1/categories', categoryRoutes)
 app.use('/api/v1/orders', orderRoutes)
 app.use('/api/v1/wishlist', wishlistRoutes)
 app.use('/api/v1/addresses', addressRoutes)
+app.use('/api/v1/cart', cartRoutes)
+app.use('/api/v1/pincode', pincodeRoutes)
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

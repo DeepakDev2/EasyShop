@@ -9,8 +9,10 @@ export default function CategoryNav() {
   const { data: categories = [] } = useCategories()
 
   const handleClick = (slug: string) => {
-    if (slug === activeCategory) router.push('/')
-    else router.push(`/?category=${slug}`)
+    const params = new URLSearchParams()
+    if (slug) params.set('category', slug)
+    const qs = params.toString()
+    router.push(qs ? `/?${qs}` : '/')
   }
 
   return (

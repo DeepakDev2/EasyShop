@@ -10,10 +10,16 @@ export default function Header() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
+
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '')
+  }, [searchParams])
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const mobileInputRef = useRef<HTMLInputElement>(null)
+  const accountRef = useRef<HTMLDivElement>(null)
   const itemCount = useCartStore(s => s.itemCount())
   const { user, isLoggedIn, logout } = useAuthStore()
 
@@ -24,6 +30,25 @@ export default function Header() {
   useEffect(() => {
     if (showMobileSearch) mobileInputRef.current?.focus()
   }, [showMobileSearch])
+
+  // Close account menu on outside click or Escape
+  useEffect(() => {
+    if (!accountOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setAccountOpen(false)
+      }
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAccountOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [accountOpen])
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -87,18 +112,51 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-5 text-white text-sm font-medium">
           {mounted && isLoggedIn && user ? (
-            <div className="flex items-center gap-1.5 relative group cursor-pointer">
-              <User size={16} />
-              <span className="max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
-              <ChevronDown size={12} />
-              <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded shadow-lg text-gray-700 text-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
-                <Link href="/orders" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50">📦 My Orders</Link>
-                <Link href="/wishlist" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50">❤️ Wishlist</Link>
-                <button onClick={() => { logout(); router.push('/') }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500 border-t border-gray-100">
-                  <LogOut size={14} /> Logout
-                </button>
-              </div>
+            <div ref={accountRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setAccountOpen(v => !v)}
+                aria-expanded={accountOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors py-1 px-1 rounded hover:bg-white/10"
+              >
+                <User size={16} />
+                <span className="max-w-[100px] truncate">{user.name.split(' ')[0]}</span>
+                <ChevronDown size={12} className={`transition-transform ${accountOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {accountOpen && (
+                <div
+                  role="menu"
+                  className="absolute top-full right-0 pt-1 w-48 z-[60]"
+                >
+                  <div className="bg-white rounded shadow-lg text-gray-700 text-sm border border-gray-100 overflow-hidden">
+                    <Link
+                      href="/orders"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50"
+                    >
+                      📦 My Orders
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50"
+                    >
+                      ❤️ Wishlist
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => { logout(); setAccountOpen(false); router.push('/') }}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500 border-t border-gray-100"
+                    >
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <Link href="/auth/login" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors">

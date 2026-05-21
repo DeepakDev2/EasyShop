@@ -49,6 +49,7 @@ export const createOrder = async (userId: number, input: CreateOrderInput) => {
       await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.qty } } })
     }
 
+    await tx.cartItem.deleteMany({ where: { userId } })
     return newOrder
   })
 

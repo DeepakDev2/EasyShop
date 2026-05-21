@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getToken } from '@/lib/token'
 
 const api = axios.create({
   baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') + '/api/v1',
@@ -6,21 +7,31 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+const getAuthToken = (): string | null => {
+  const direct = getToken()
+  if (direct) return direct
+  try {
+    const raw = localStorage.getItem('easyshop-auth')
+    if (!raw) return null
+    return JSON.parse(raw)?.state?.token ?? null
+  } catch {
+    return null
+  }
+}
+
 // Attach JWT on every request
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('easyshop_token')
-    if (token) config.headers.Authorization = `Bearer ${token}`
-  }
+  const token = getAuthToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Global 401 handler
+// Global 401 handler — clear all auth state
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('easyshop_token')
+      import('@/store/authStore').then(({ useAuthStore }) => useAuthStore.getState().logout())
     }
     return Promise.reject(err)
   }

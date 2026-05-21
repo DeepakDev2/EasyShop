@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import api from '@/lib/api'
 import { Product } from '@/types'
 
 export interface CartProduct {
@@ -15,16 +16,18 @@ export interface CartProduct {
 }
 
 export interface CartEntry {
+  cartItemId?: number
   product: CartProduct
   qty: number
 }
 
 interface CartStore {
   items: CartEntry[]
-  addItem: (product: Product, qty?: number) => void
-  updateQty: (productId: number, qty: number) => void
-  removeItem: (productId: number) => void
-  clearCart: () => void
+  addItem: (product: Product, qty?: number) => Promise<void>
+  updateQty: (productId: number, qty: number) => Promise<void>
+  removeItem: (productId: number) => Promise<void>
+  clearCart: () => Promise<void>
+  loadFromServer: () => Promise<void>
   itemCount: () => number
   subtotal: () => number
   discount: () => number
@@ -35,20 +38,83 @@ const toCartProduct = (p: Product): CartProduct => ({
   id: p.id,
   name: p.name,
   slug: p.slug,
-  price: p.price,
-  originalPrice: p.originalPrice,
+  price: Number(p.price),
+  originalPrice: p.originalPrice != null ? Number(p.originalPrice) : null,
   discountPct: p.discountPct,
   brand: p.brand,
   stock: p.stock,
   image: p.images.find(i => i.isPrimary)?.url ?? p.images[0]?.url ?? '',
 })
 
+const fromServerItem = (row: {
+  id: number
+  quantity: number
+  product: {
+    id: number
+    name: string
+    slug: string
+    price: unknown
+    originalPrice: unknown
+    stock: number
+    brand: string | null
+    images: { url: string; isPrimary: boolean }[]
+  }
+}): CartEntry => {
+  const p = row.product
+  const price = Number(p.price)
+  const originalPrice = p.originalPrice != null ? Number(p.originalPrice) : null
+  const discountPct = originalPrice && originalPrice > price
+    ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    : 0
+  return {
+    cartItemId: row.id,
+    qty: row.quantity,
+    product: {
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price,
+      originalPrice,
+      discountPct,
+      brand: p.brand,
+      stock: p.stock,
+      image: p.images.find(i => i.isPrimary)?.url ?? p.images[0]?.url ?? '',
+    },
+  }
+}
+
+const isLoggedIn = () => {
+  try {
+    const auth = JSON.parse(localStorage.getItem('easyshop-auth') ?? '{}')
+    return Boolean(auth?.state?.isLoggedIn && auth?.state?.token)
+  } catch {
+    return false
+  }
+}
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
 
-      addItem: (product, qty = 1) => {
+      loadFromServer: async () => {
+        if (!isLoggedIn()) return
+        try {
+          const res = await api.get('/cart')
+          set({ items: res.data.data.map(fromServerItem) })
+        } catch {
+          /* keep local cart on failure */
+        }
+      },
+
+      addItem: async (product, qty = 1) => {
+        if (isLoggedIn()) {
+          try {
+            await api.post('/cart', { productId: product.id, quantity: qty })
+            await get().loadFromServer()
+            return
+          } catch { /* fall through to local */ }
+        }
         set(state => {
           const existing = state.items.find(i => i.product.id === product.id)
           if (existing) {
@@ -64,18 +130,39 @@ export const useCartStore = create<CartStore>()(
         })
       },
 
-      updateQty: (productId, qty) => {
-        if (qty < 1) { get().removeItem(productId); return }
+      updateQty: async (productId, qty) => {
+        if (qty < 1) { await get().removeItem(productId); return }
+        const entry = get().items.find(i => i.product.id === productId)
+        if (isLoggedIn() && entry?.cartItemId) {
+          try {
+            await api.put(`/cart/${entry.cartItemId}`, { quantity: qty })
+            await get().loadFromServer()
+            return
+          } catch { /* fall through */ }
+        }
         set(state => ({
           items: state.items.map(i => i.product.id === productId ? { ...i, qty } : i),
         }))
       },
 
-      removeItem: (productId) => {
+      removeItem: async (productId) => {
+        const entry = get().items.find(i => i.product.id === productId)
+        if (isLoggedIn() && entry?.cartItemId) {
+          try {
+            await api.delete(`/cart/${entry.cartItemId}`)
+            await get().loadFromServer()
+            return
+          } catch { /* fall through */ }
+        }
         set(state => ({ items: state.items.filter(i => i.product.id !== productId) }))
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: async () => {
+        if (isLoggedIn()) {
+          try { await api.delete('/cart') } catch { /* ignore */ }
+        }
+        set({ items: [] })
+      },
 
       itemCount: () => get().items.reduce((sum, i) => sum + i.qty, 0),
 

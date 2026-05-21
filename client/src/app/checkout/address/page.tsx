@@ -1,13 +1,16 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
 import { MapPin, Home, Briefcase, Plus, CheckCircle, Loader2 } from 'lucide-react'
+import axios from 'axios'
 import api from '@/lib/api'
 import toast from 'react-hot-toast'
+import { INDIAN_STATES } from '@/lib/india-states'
+import { lookupPincode } from '@/lib/pincode'
 
 interface AddressForm {
   fullName: string; phone: string; line1: string; line2: string
@@ -17,13 +20,6 @@ interface AddressForm {
 interface SavedAddress extends AddressForm {
   id: number; isDefault: boolean
 }
-
-const INDIAN_STATES = [
-  'Andhra Pradesh','Assam','Bihar','Chhattisgarh','Delhi','Goa','Gujarat',
-  'Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh',
-  'Maharashtra','Odisha','Punjab','Rajasthan','Tamil Nadu','Telangana',
-  'Uttar Pradesh','Uttarakhand','West Bengal',
-]
 
 const EMPTY_FORM: AddressForm = {
   fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', type: 'home',
@@ -39,7 +35,52 @@ export default function AddressPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM)
   const [pincodeLoading, setPincodeLoading] = useState(false)
+  const [pincodeHint, setPincodeHint] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const pincodeAbortRef = useRef<AbortController | null>(null)
+
+  const stateOptions = useMemo(() => {
+    if (form.state && !INDIAN_STATES.includes(form.state as (typeof INDIAN_STATES)[number])) {
+      return [...INDIAN_STATES, form.state]
+    }
+    return [...INDIAN_STATES]
+  }, [form.state])
+
+  // Auto-fill city & state when 6-digit pincode is entered (debounced)
+  useEffect(() => {
+    const pin = form.pincode.replace(/\D/g, '')
+    if (pin.length !== 6) {
+      setPincodeHint(null)
+      return
+    }
+
+    const timer = setTimeout(async () => {
+      pincodeAbortRef.current?.abort()
+      const ac = new AbortController()
+      pincodeAbortRef.current = ac
+      setPincodeLoading(true)
+      setPincodeHint(null)
+
+      try {
+        const result = await lookupPincode(pin, ac.signal)
+        setForm(f => ({ ...f, pincode: pin, city: result.city, state: result.state }))
+        setPincodeHint(`${result.city}, ${result.state}`)
+      } catch (err: unknown) {
+        if (axios.isCancel(err)) return
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+          ?? 'Could not find this pincode'
+        setPincodeHint(null)
+        toast.error(msg)
+      } finally {
+        setPincodeLoading(false)
+      }
+    }, 400)
+
+    return () => {
+      clearTimeout(timer)
+      pincodeAbortRef.current?.abort()
+    }
+  }, [form.pincode])
 
   // Load saved addresses from DB on mount (logged-in users only)
   useEffect(() => {
@@ -66,22 +107,6 @@ export default function AddressPage() {
   )
 
   const setField = (key: keyof AddressForm, val: string) => setForm(f => ({ ...f, [key]: val }))
-
-  const handlePincode = async (pin: string) => {
-    setField('pincode', pin)
-    if (pin.length === 6) {
-      setPincodeLoading(true)
-      try {
-        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`)
-        const data = await res.json()
-        if (data[0]?.Status === 'Success') {
-          const post = data[0].PostOffice?.[0]
-          if (post) setForm(f => ({ ...f, pincode: pin, city: post.District, state: post.State }))
-        }
-      } catch { /* user can fill manually */ }
-      finally { setPincodeLoading(false) }
-    }
-  }
 
   // Save new address to DB (if logged in) then proceed
   const handleSubmit = async (e: React.FormEvent) => {
@@ -206,13 +231,24 @@ export default function AddressPage() {
                 <div>
                   <label className="text-xs text-gray-500 font-medium mb-1 block">Pincode *</label>
                   <div className="relative">
-                    <input required pattern="\d{6}" maxLength={6} value={form.pincode}
-                      onChange={e => handlePincode(e.target.value.replace(/\D/, ''))}
-                      className="input-base pr-8" placeholder="6-digit pincode" />
+                    <input
+                      required
+                      pattern="\d{6}"
+                      maxLength={6}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      value={form.pincode}
+                      onChange={e => setField('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="input-base pr-8"
+                      placeholder="6-digit pincode"
+                    />
                     {pincodeLoading && (
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
                     )}
                   </div>
+                  {pincodeHint && (
+                    <p className="text-xs text-[#388e3c] mt-1">✓ {pincodeHint}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 font-medium mb-1 block">City *</label>
@@ -223,7 +259,7 @@ export default function AddressPage() {
                   <label className="text-xs text-gray-500 font-medium mb-1 block">State *</label>
                   <select required value={form.state} onChange={e => setField('state', e.target.value)} className="input-base">
                     <option value="">Select State</option>
-                    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                    {stateOptions.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>

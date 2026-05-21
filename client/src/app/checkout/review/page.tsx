@@ -42,7 +42,7 @@ export default function ReviewPage() {
         address,
       })
       const order = res.data.data
-      clearCart()
+      await clearCart()
       sessionStorage.removeItem('checkout_address')
       router.push(`/order-success?order=${order.orderNumber}&total=${order.total}`)
     } catch (err: unknown) {

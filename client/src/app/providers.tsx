@@ -3,18 +3,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
+import { useCartStore } from '@/store/cartStore'
 import api from '@/lib/api'
+import { setToken } from '@/lib/token'
 import NavigationProgress from '@/components/layout/NavigationProgress'
 
 function AuthValidator() {
   const { isLoggedIn, token, logout } = useAuthStore()
+  const loadFromServer = useCartStore(s => s.loadFromServer)
+
   useEffect(() => {
     if (!isLoggedIn || !token) return
-    // Validate token against server on every app load
-    api.get('/auth/me').catch(() => {
-      logout() // token is invalid/expired — clear client state
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    setToken(token)
+    api.get('/auth/me')
+      .then(() => loadFromServer())
+      .catch(() => logout())
+  }, [isLoggedIn, token, logout, loadFromServer])
+
   return null
 }
 

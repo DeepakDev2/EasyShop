@@ -4,6 +4,7 @@ import { prisma } from '../config/db'
 import { env } from '../config/env'
 import { RegisterInput, LoginInput } from '../schemas/auth.schema'
 import { createError } from '../middleware/errorHandler'
+import * as cartService from './cart.service'
 
 const signToken = (userId: number) =>
   jwt.sign({ userId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] })
@@ -22,6 +23,7 @@ export const register = async (data: RegisterInput) => {
   })
 
   const token = signToken(user.id)
+  if (data.guestCart?.length) await cartService.mergeCartItems(user.id, data.guestCart)
   return { user: safeUser(user), token }
 }
 
@@ -33,6 +35,7 @@ export const login = async (data: LoginInput) => {
   if (!valid) throw createError('Invalid email or password', 401, 'INVALID_CREDENTIALS')
 
   const token = signToken(user.id)
+  if (data.guestCart?.length) await cartService.mergeCartItems(user.id, data.guestCart)
   return { user: safeUser(user), token }
 }
 
