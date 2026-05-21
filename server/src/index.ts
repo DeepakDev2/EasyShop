@@ -31,14 +31,17 @@ app.get('/health', (req, res) => {
   })
 })
 
-// ─── API Routes (will be added in Phase 1+) ───────────────────────────────────
-// app.use('/api/v1/auth', authRoutes)
-// app.use('/api/v1/products', productRoutes)
-// app.use('/api/v1/categories', categoryRoutes)
-// app.use('/api/v1/cart', cartRoutes)
-// app.use('/api/v1/orders', orderRoutes)
-// app.use('/api/v1/addresses', addressRoutes)
-// app.use('/api/v1/wishlist', wishlistRoutes)
+// ─── API Routes ───────────────────────────────────────────────────────────────
+import productRoutes from './routes/product.routes'
+import categoryRoutes from './routes/category.routes'
+
+app.use('/api/v1/products', productRoutes)
+app.use('/api/v1/categories', categoryRoutes)
+// app.use('/api/v1/auth', authRoutes)       — Phase 6
+// app.use('/api/v1/cart', cartRoutes)       — Phase 4
+// app.use('/api/v1/orders', orderRoutes)    — Phase 5
+// app.use('/api/v1/addresses', addressRoutes) — Phase 5
+// app.use('/api/v1/wishlist', wishlistRoutes) — Phase 7
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
