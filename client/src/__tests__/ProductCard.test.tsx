@@ -37,6 +37,7 @@ const mockProduct = {
   id: 1,
   name: 'Samsung Galaxy S24 Ultra 5G Smartphone',
   slug: 'samsung-galaxy-s24',
+  description: 'Flagship phone',
   price: 74999,
   originalPrice: 89999,
   discountPct: 17,
@@ -44,9 +45,15 @@ const mockProduct = {
   ratingCount: 1234,
   stock: 50,
   brand: 'Samsung',
+  isActive: true,
+  createdAt: new Date().toISOString(),
   image: 'https://picsum.photos/400',
-  category: 'Mobiles',
-}
+  images: [{ url: 'https://picsum.photos/400', isPrimary: true }],
+  specs: [],
+  category: { id: 1, name: 'Mobiles', slug: 'mobiles' },
+  categorySlug: 'mobiles',
+  categoryId: 1,
+} as any // cast to any since we only need fields used by the component
 
 describe('ProductCard', () => {
   it('renders product name', () => {

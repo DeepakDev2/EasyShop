@@ -106,6 +106,7 @@ model Address {
   city      String  @db.VarChar(100)
   state     String  @db.VarChar(100)
   pincode   String  @db.VarChar(10)
+  type      String  @default("home") @db.VarChar(20)
   isDefault Boolean @default(false) @map("is_default")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)

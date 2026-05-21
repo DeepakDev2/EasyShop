@@ -1,14 +1,21 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { useCartStore } from '@/store/cartStore'
-import { MapPin, Home, Briefcase } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
+import { MapPin, Home, Briefcase, Plus, CheckCircle, Loader2 } from 'lucide-react'
+import api from '@/lib/api'
+import toast from 'react-hot-toast'
 
 interface AddressForm {
   fullName: string; phone: string; line1: string; line2: string
   city: string; state: string; pincode: string; type: 'home' | 'work'
+}
+
+interface SavedAddress extends AddressForm {
+  id: number; isDefault: boolean
 }
 
 const INDIAN_STATES = [
@@ -18,29 +25,50 @@ const INDIAN_STATES = [
   'Uttar Pradesh','Uttarakhand','West Bengal',
 ]
 
+const EMPTY_FORM: AddressForm = {
+  fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', type: 'home',
+}
+
 export default function AddressPage() {
   const router = useRouter()
   const { items } = useCartStore()
-  const [form, setForm] = useState<AddressForm>({
-    fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', type: 'home',
-  })
+  const { isLoggedIn } = useAuthStore()
+
+  const [saved, setSaved] = useState<SavedAddress[]>([])
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<AddressForm>(EMPTY_FORM)
   const [pincodeLoading, setPincodeLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  if (items.length === 0) {
-    return (
-      <><Header />
-        <div className="max-w-xl mx-auto py-20 text-center">
-          <p className="text-lg text-gray-600 mb-4">Your cart is empty.</p>
-          <Link href="/" className="btn-secondary px-8 py-2.5 rounded-sm inline-block">Shop Now</Link>
-        </div>
-      </>
-    )
-  }
+  // Load saved addresses from DB on mount (logged-in users only)
+  useEffect(() => {
+    if (!isLoggedIn) { setShowForm(true); return }
+    api.get('/addresses').then(res => {
+      const addresses: SavedAddress[] = res.data.data
+      setSaved(addresses)
+      if (addresses.length === 0) {
+        setShowForm(true)
+      } else {
+        const def = addresses.find(a => a.isDefault) ?? addresses[0]
+        setSelectedId(def.id)
+      }
+    }).catch(() => setShowForm(true))
+  }, [isLoggedIn])
 
-  const set = (key: keyof AddressForm, val: string) => setForm(f => ({ ...f, [key]: val }))
+  if (items.length === 0) return (
+    <><Header />
+      <div className="max-w-xl mx-auto py-20 text-center">
+        <p className="text-lg text-gray-600 mb-4">Your cart is empty.</p>
+        <Link href="/" className="btn-secondary px-8 py-2.5 rounded-sm inline-block">Shop Now</Link>
+      </div>
+    </>
+  )
+
+  const setField = (key: keyof AddressForm, val: string) => setForm(f => ({ ...f, [key]: val }))
 
   const handlePincode = async (pin: string) => {
-    set('pincode', pin)
+    setField('pincode', pin)
     if (pin.length === 6) {
       setPincodeLoading(true)
       try {
@@ -48,18 +76,36 @@ export default function AddressPage() {
         const data = await res.json()
         if (data[0]?.Status === 'Success') {
           const post = data[0].PostOffice?.[0]
-          if (post) {
-            setForm(f => ({ ...f, pincode: pin, city: post.District, state: post.State }))
-          }
+          if (post) setForm(f => ({ ...f, pincode: pin, city: post.District, state: post.State }))
         }
-      } catch { /* silently fail — user can fill manually */ }
+      } catch { /* user can fill manually */ }
       finally { setPincodeLoading(false) }
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Save new address to DB (if logged in) then proceed
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    sessionStorage.setItem('checkout_address', JSON.stringify(form))
+    setSaving(true)
+    try {
+      let address = form
+      if (isLoggedIn) {
+        const res = await api.post('/addresses', { ...form, isDefault: saved.length === 0 })
+        address = res.data.data
+        toast.success('Address saved!')
+      }
+      sessionStorage.setItem('checkout_address', JSON.stringify(address))
+      router.push('/checkout/review')
+    } catch {
+      toast.error('Could not save address')
+    } finally { setSaving(false) }
+  }
+
+  // Use an existing saved address
+  const handleUseSaved = () => {
+    const addr = saved.find(a => a.id === selectedId)
+    if (!addr) return
+    sessionStorage.setItem('checkout_address', JSON.stringify(addr))
     router.push('/checkout/review')
   }
 
@@ -67,7 +113,7 @@ export default function AddressPage() {
     <div className="min-h-screen bg-[#f1f3f6]">
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Steps */}
+        {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6 text-sm">
           <span className="bg-[#2874f0] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
           <span className="font-semibold text-[#2874f0]">Delivery Address</span>
@@ -76,88 +122,136 @@ export default function AddressPage() {
           <span className="text-gray-400">Review & Pay</span>
         </div>
 
-        <div className="card p-6">
-          <h1 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <MapPin size={20} className="text-[#2874f0]" /> Delivery Address
-          </h1>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 font-medium mb-1 block">Full Name *</label>
-                <input required minLength={2} value={form.fullName} onChange={e => set('fullName', e.target.value)}
-                  className="input-base" placeholder="Enter full name" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 font-medium mb-1 block">Mobile Number *</label>
-                <input required pattern="\d{10}" maxLength={10} value={form.phone}
-                  onChange={e => set('phone', e.target.value.replace(/\D/, ''))}
-                  className="input-base" placeholder="10-digit mobile number" />
-              </div>
+        {/* Saved addresses (logged-in only) */}
+        {isLoggedIn && saved.length > 0 && (
+          <div className="card p-5 mb-4">
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2 mb-4">
+              <MapPin size={16} className="text-[#2874f0]" /> Saved Addresses
+            </h2>
+            <div className="space-y-3">
+              {saved.map(addr => (
+                <label key={addr.id}
+                  className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${
+                    selectedId === addr.id ? 'border-[#2874f0] bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <input type="radio" name="addr" value={addr.id} checked={selectedId === addr.id}
+                    onChange={() => setSelectedId(addr.id)} className="mt-1 accent-[#2874f0]" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-semibold text-sm text-gray-800">{addr.fullName}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded capitalize font-medium ${
+                        addr.type === 'home' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}>{addr.type}</span>
+                      {addr.isDefault && <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">Default</span>}
+                    </div>
+                    <p className="text-sm text-gray-600">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
+                    <p className="text-sm text-gray-600">{addr.city}, {addr.state} – {addr.pincode}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">📞 {addr.phone}</p>
+                  </div>
+                  {selectedId === addr.id && <CheckCircle size={18} className="text-[#2874f0] mt-1 shrink-0" />}
+                </label>
+              ))}
             </div>
 
-            <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Address *</label>
-              <input required minLength={5} value={form.line1} onChange={e => set('line1', e.target.value)}
-                className="input-base" placeholder="House No, Building, Street, Area" />
+            <div className="flex gap-3 mt-4">
+              <button onClick={handleUseSaved}
+                className="btn-secondary px-8 py-2.5 rounded-sm flex-1">
+                Deliver Here →
+              </button>
+              <button onClick={() => { setShowForm(v => !v); setForm(EMPTY_FORM) }}
+                className="btn-outline px-4 py-2.5 rounded-sm flex items-center gap-1.5 text-sm">
+                <Plus size={14} /> Add New
+              </button>
             </div>
+          </div>
+        )}
 
-            <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Locality / Landmark (optional)</label>
-              <input value={form.line2} onChange={e => set('line2', e.target.value)}
-                className="input-base" placeholder="Nearby landmark" />
-            </div>
+        {/* Address form — new or guest */}
+        {(showForm || !isLoggedIn) && (
+          <div className="card p-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <MapPin size={20} className="text-[#2874f0]" />
+              {saved.length > 0 ? 'Add New Address' : 'Delivery Address'}
+            </h2>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs text-gray-500 font-medium mb-1 block">Pincode *</label>
-                <div className="relative">
-                  <input required pattern="\d{6}" maxLength={6} value={form.pincode}
-                    onChange={e => handlePincode(e.target.value.replace(/\D/, ''))}
-                    className="input-base pr-8" placeholder="6-digit pincode" />
-                  {pincodeLoading && (
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
-                  )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1 block">Full Name *</label>
+                  <input required minLength={2} value={form.fullName} onChange={e => setField('fullName', e.target.value)}
+                    className="input-base" placeholder="Enter full name" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1 block">Mobile Number *</label>
+                  <input required pattern="\d{10}" maxLength={10} value={form.phone}
+                    onChange={e => setField('phone', e.target.value.replace(/\D/, ''))}
+                    className="input-base" placeholder="10-digit mobile number" />
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-500 font-medium mb-1 block">City *</label>
-                <input required minLength={2} value={form.city} onChange={e => set('city', e.target.value)}
-                  className="input-base" placeholder="City" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 font-medium mb-1 block">State *</label>
-                <select required value={form.state} onChange={e => set('state', e.target.value)} className="input-base">
-                  <option value="">Select State</option>
-                  {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
 
-            {/* Address Type */}
-            <div>
-              <label className="text-xs text-gray-500 font-medium mb-2 block">Address Type</label>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => set('type', 'home')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded border text-sm transition-colors ${
-                    form.type === 'home' ? 'border-[#2874f0] bg-blue-50 text-[#2874f0]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}>
-                  <Home size={14} /> Home
-                </button>
-                <button type="button" onClick={() => set('type', 'work')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded border text-sm transition-colors ${
-                    form.type === 'work' ? 'border-[#2874f0] bg-blue-50 text-[#2874f0]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}>
-                  <Briefcase size={14} /> Work
-                </button>
+              <div>
+                <label className="text-xs text-gray-500 font-medium mb-1 block">Address *</label>
+                <input required minLength={5} value={form.line1} onChange={e => setField('line1', e.target.value)}
+                  className="input-base" placeholder="House No, Building, Street, Area" />
               </div>
-            </div>
 
-            <button type="submit" className="btn-secondary w-full py-3 mt-2 rounded-sm">
-              Deliver to this Address →
-            </button>
-          </form>
-        </div>
+              <div>
+                <label className="text-xs text-gray-500 font-medium mb-1 block">Locality / Landmark (optional)</label>
+                <input value={form.line2} onChange={e => setField('line2', e.target.value)}
+                  className="input-base" placeholder="Nearby landmark" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1 block">Pincode *</label>
+                  <div className="relative">
+                    <input required pattern="\d{6}" maxLength={6} value={form.pincode}
+                      onChange={e => handlePincode(e.target.value.replace(/\D/, ''))}
+                      className="input-base pr-8" placeholder="6-digit pincode" />
+                    {pincodeLoading && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1 block">City *</label>
+                  <input required minLength={2} value={form.city} onChange={e => setField('city', e.target.value)}
+                    className="input-base" placeholder="City" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 font-medium mb-1 block">State *</label>
+                  <select required value={form.state} onChange={e => setField('state', e.target.value)} className="input-base">
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Address Type */}
+              <div>
+                <label className="text-xs text-gray-500 font-medium mb-2 block">Address Type</label>
+                <div className="flex gap-3">
+                  {(['home', 'work'] as const).map(t => (
+                    <button key={t} type="button" onClick={() => setField('type', t)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded border text-sm transition-colors ${
+                        form.type === t ? 'border-[#2874f0] bg-blue-50 text-[#2874f0]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                      }`}>
+                      {t === 'home' ? <Home size={14} /> : <Briefcase size={14} />}
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" disabled={saving}
+                className="btn-secondary w-full py-3 mt-2 rounded-sm flex items-center justify-center gap-2">
+                {saving && <Loader2 size={16} className="animate-spin" />}
+                {isLoggedIn ? 'Save & Deliver Here →' : 'Deliver to this Address →'}
+              </button>
+            </form>
+          </div>
+        )}
       </main>
     </div>
   )

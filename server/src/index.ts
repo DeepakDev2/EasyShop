@@ -37,13 +37,14 @@ import categoryRoutes from './routes/category.routes'
 import authRoutes from './routes/auth.routes'
 import orderRoutes from './routes/order.routes'
 import wishlistRoutes from './routes/wishlist.routes'
+import addressRoutes from './routes/address.routes'
 
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/products', productRoutes)
 app.use('/api/v1/categories', categoryRoutes)
 app.use('/api/v1/orders', orderRoutes)
 app.use('/api/v1/wishlist', wishlistRoutes)
-// app.use('/api/v1/addresses', addressRoutes) — Phase 7
+app.use('/api/v1/addresses', addressRoutes)
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {
