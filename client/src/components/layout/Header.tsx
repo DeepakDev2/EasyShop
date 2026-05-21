@@ -2,14 +2,16 @@
 import { useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ShoppingCart, User, ChevronDown } from 'lucide-react'
+import { Search, ShoppingCart, User, ChevronDown, LogOut } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { useAuthStore } from '@/store/authStore'
 
 export default function Header() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
   const itemCount = useCartStore(s => s.itemCount())
+  const { user, isLoggedIn, logout } = useAuthStore()
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -51,9 +53,23 @@ export default function Header() {
 
         {/* Nav Links */}
         <nav className="hidden md:flex items-center gap-6 text-white text-sm font-medium">
-          <Link href="/auth/login" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors">
-            <User size={16} /> Login
-          </Link>
+          {isLoggedIn && user ? (
+            <div className="flex items-center gap-1.5 relative group">
+              <User size={16} />
+              <span className="max-w-[80px] truncate text-sm">{user.name.split(' ')[0]}</span>
+              <ChevronDown size={12} />
+              <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded shadow-lg text-gray-700 text-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
+                <button onClick={() => { logout(); router.push('/') }}
+                  className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500">
+                  <LogOut size={14} /> Logout
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link href="/auth/login" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors">
+              <User size={16} /> Login
+            </Link>
+          )}
           <Link href="/cart" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors relative">
             <ShoppingCart size={16} />
             <span>Cart</span>
