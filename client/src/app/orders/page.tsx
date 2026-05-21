@@ -47,7 +47,7 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-3">
             {orders.map((order: any) => (
-              <div key={order.id} className="card p-4">
+              <Link key={order.id} href={`/orders/${order.id}`} className="block card p-4 hover:shadow-md transition-shadow cursor-pointer">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="text-xs text-gray-400">Order #{order.orderNumber}</p>
@@ -81,7 +81,7 @@ export default function OrdersPage() {
                 <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between">
                   <p className="text-sm font-bold text-gray-800">Total: {formatPrice(Number(order.total))}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

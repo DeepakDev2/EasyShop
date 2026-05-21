@@ -19,6 +19,14 @@ interface AuthStore {
   logout: () => void
 }
 
+const setTokenCookie = (token: string) => {
+  document.cookie = `easyshop_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+}
+
+const clearTokenCookie = () => {
+  document.cookie = 'easyshop_token=; path=/; max-age=0; SameSite=Lax'
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
@@ -30,6 +38,7 @@ export const useAuthStore = create<AuthStore>()(
         const res = await api.post('/auth/login', { email, password })
         const { user, token } = res.data
         localStorage.setItem('easyshop_token', token)
+        setTokenCookie(token)
         set({ user, token, isLoggedIn: true })
       },
 
@@ -37,11 +46,13 @@ export const useAuthStore = create<AuthStore>()(
         const res = await api.post('/auth/register', { name, email, password, phone })
         const { user, token } = res.data
         localStorage.setItem('easyshop_token', token)
+        setTokenCookie(token)
         set({ user, token, isLoggedIn: true })
       },
 
       logout: () => {
         localStorage.removeItem('easyshop_token')
+        clearTokenCookie()
         set({ user: null, token: null, isLoggedIn: false })
       },
     }),

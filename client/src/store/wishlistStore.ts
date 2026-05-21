@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import api from '@/lib/api'
 import { useAuthStore } from './authStore'
+import toast from 'react-hot-toast'
 
 interface WishlistStore {
   ids: number[]
@@ -24,7 +25,18 @@ export const useWishlistStore = create<WishlistStore>()(
       },
 
       toggle: async (productId: number) => {
-        if (!useAuthStore.getState().isLoggedIn) return false
+        const isLoggedIn = useAuthStore.getState().isLoggedIn
+        const already = get().ids.includes(productId)
+
+        // Guest wishlist — just store locally
+        if (!isLoggedIn) {
+          set(state => ({
+            ids: already ? state.ids.filter(id => id !== productId) : [...state.ids, productId],
+          }))
+          return !already
+        }
+
+        // Logged in — sync with server
         try {
           const res = await api.post(`/wishlist/${productId}`)
           const { added } = res.data
@@ -32,7 +44,10 @@ export const useWishlistStore = create<WishlistStore>()(
             ids: added ? [...state.ids, productId] : state.ids.filter(id => id !== productId),
           }))
           return added
-        } catch { return false }
+        } catch {
+          toast.error('Could not update wishlist')
+          return false
+        }
       },
 
       isWished: (productId: number) => get().ids.includes(productId),

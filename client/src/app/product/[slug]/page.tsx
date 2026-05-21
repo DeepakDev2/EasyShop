@@ -3,10 +3,11 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import { ShoppingCart, Zap, Star, Truck, Shield, RotateCcw, ChevronRight, Minus, Plus } from 'lucide-react'
+import { ShoppingCart, Zap, Star, Truck, Shield, RotateCcw, ChevronRight, Minus, Plus, Heart } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import ImageCarousel from '@/components/product/ImageCarousel'
 import { useCartStore } from '@/store/cartStore'
+import { useWishlistStore } from '@/store/wishlistStore'
 import SpecsTable from '@/components/product/SpecsTable'
 import ProductCard from '@/components/product/ProductCard'
 import { useProduct } from '@/hooks/useProducts'
@@ -43,6 +44,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1)
   const [pincode, setPincode] = useState('')
   const addItem = useCartStore(s => s.addItem)
+  const { toggle, isWished } = useWishlistStore()
 
   if (isLoading) return <><Header /><Skeleton /></>
   if (isError || !product) return (
@@ -113,7 +115,18 @@ export default function ProductDetailPage() {
                 {product.brand}
               </Link>
             )}
-            <h1 className="text-xl font-medium text-gray-900 leading-snug">{product.name}</h1>
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-xl font-medium text-gray-900 leading-snug flex-1">{product.name}</h1>
+              <button
+                onClick={async () => {
+                  const added = await toggle(product.id)
+                  toast(added ? 'Added to Wishlist ❤️' : 'Removed from Wishlist', { icon: added ? '❤️' : '🤍' })
+                }}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                aria-label="Add to wishlist">
+                <Heart size={22} className={isWished(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'} />
+              </button>
+            </div>
 
             {/* Rating */}
             {product.ratingCount > 0 && (

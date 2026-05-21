@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { useCartStore } from '@/store/cartStore'
-import { MapPin } from 'lucide-react'
+import { MapPin, Home, Briefcase } from 'lucide-react'
 
 interface AddressForm {
   fullName: string; phone: string; line1: string; line2: string
-  city: string; state: string; pincode: string
+  city: string; state: string; pincode: string; type: 'home' | 'work'
 }
 
 const INDIAN_STATES = [
@@ -22,8 +22,9 @@ export default function AddressPage() {
   const router = useRouter()
   const { items } = useCartStore()
   const [form, setForm] = useState<AddressForm>({
-    fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '',
+    fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', type: 'home',
   })
+  const [pincodeLoading, setPincodeLoading] = useState(false)
 
   if (items.length === 0) {
     return (
@@ -37,6 +38,24 @@ export default function AddressPage() {
   }
 
   const set = (key: keyof AddressForm, val: string) => setForm(f => ({ ...f, [key]: val }))
+
+  const handlePincode = async (pin: string) => {
+    set('pincode', pin)
+    if (pin.length === 6) {
+      setPincodeLoading(true)
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`)
+        const data = await res.json()
+        if (data[0]?.Status === 'Success') {
+          const post = data[0].PostOffice?.[0]
+          if (post) {
+            setForm(f => ({ ...f, pincode: pin, city: post.District, state: post.State }))
+          }
+        }
+      } catch { /* silently fail — user can fill manually */ }
+      finally { setPincodeLoading(false) }
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,23 +97,28 @@ export default function AddressPage() {
             </div>
 
             <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Address (Area and Street) *</label>
+              <label className="text-xs text-gray-500 font-medium mb-1 block">Address *</label>
               <input required minLength={5} value={form.line1} onChange={e => set('line1', e.target.value)}
                 className="input-base" placeholder="House No, Building, Street, Area" />
             </div>
 
             <div>
-              <label className="text-xs text-gray-500 font-medium mb-1 block">Locality / Town (optional)</label>
+              <label className="text-xs text-gray-500 font-medium mb-1 block">Locality / Landmark (optional)</label>
               <input value={form.line2} onChange={e => set('line2', e.target.value)}
-                className="input-base" placeholder="Landmark, nearby area" />
+                className="input-base" placeholder="Nearby landmark" />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs text-gray-500 font-medium mb-1 block">Pincode *</label>
-                <input required pattern="\d{6}" maxLength={6} value={form.pincode}
-                  onChange={e => set('pincode', e.target.value.replace(/\D/, ''))}
-                  className="input-base" placeholder="6-digit pincode" />
+                <div className="relative">
+                  <input required pattern="\d{6}" maxLength={6} value={form.pincode}
+                    onChange={e => handlePincode(e.target.value.replace(/\D/, ''))}
+                    className="input-base pr-8" placeholder="6-digit pincode" />
+                  {pincodeLoading && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
+                  )}
+                </div>
               </div>
               <div>
                 <label className="text-xs text-gray-500 font-medium mb-1 block">City *</label>
@@ -107,6 +131,25 @@ export default function AddressPage() {
                   <option value="">Select State</option>
                   {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
+              </div>
+            </div>
+
+            {/* Address Type */}
+            <div>
+              <label className="text-xs text-gray-500 font-medium mb-2 block">Address Type</label>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => set('type', 'home')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded border text-sm transition-colors ${
+                    form.type === 'home' ? 'border-[#2874f0] bg-blue-50 text-[#2874f0]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  <Home size={14} /> Home
+                </button>
+                <button type="button" onClick={() => set('type', 'work')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded border text-sm transition-colors ${
+                    form.type === 'work' ? 'border-[#2874f0] bg-blue-50 text-[#2874f0]' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}>
+                  <Briefcase size={14} /> Work
+                </button>
               </div>
             </div>
 

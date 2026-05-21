@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import CategoryNav from '@/components/layout/CategoryNav'
@@ -33,6 +33,13 @@ function HomePage() {
       page: Number(searchParams.get('page')) || 1,
     }))
   }, [searchParams])
+
+  // 300ms debounce: only update URL/query after user stops typing
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSearch = useCallback((q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => updateFilters({ q: q || undefined, page: 1 }), 300)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateFilters = (updates: Partial<ProductFilters>) => {
     const next = { ...filters, ...updates }

@@ -9,7 +9,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
 import { formatPrice } from '@/lib/utils'
 import api from '@/lib/api'
-import { Package, MapPin, CheckCircle } from 'lucide-react'
+import { Package, MapPin } from 'lucide-react'
 
 export default function ReviewPage() {
   const router = useRouter()
@@ -17,8 +17,6 @@ export default function ReviewPage() {
   const { isLoggedIn } = useAuthStore()
   const [address, setAddress] = useState<Record<string, string> | null>(null)
   const [placing, setPlacing] = useState(false)
-  const [placed, setPlaced] = useState(false)
-  const [orderId, setOrderId] = useState<number | null>(null)
 
   useEffect(() => {
     const stored = sessionStorage.getItem('checkout_address')
@@ -26,7 +24,7 @@ export default function ReviewPage() {
     else router.replace('/checkout/address')
   }, [router])
 
-  if (items.length === 0 && !placed) {
+  if (items.length === 0) {
     return <><Header /><div className="py-20 text-center"><Link href="/" className="btn-secondary px-8 py-2.5 rounded-sm inline-block">Shop Now</Link></div></>
   }
 
@@ -43,35 +41,14 @@ export default function ReviewPage() {
         items: items.map(i => ({ productId: i.product.id, qty: i.qty, price: i.product.price })),
         address,
       })
-      setOrderId(res.data.data.id)
+      const order = res.data.data
       clearCart()
       sessionStorage.removeItem('checkout_address')
-      setPlaced(true)
+      router.push(`/order-success?order=${order.orderNumber}&total=${order.total}`)
     } catch (err: unknown) {
       toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to place order')
-    } finally {
       setPlacing(false)
     }
-  }
-
-  if (placed) {
-    return (
-      <div className="min-h-screen bg-[#f1f3f6]">
-        <Header />
-        <div className="max-w-lg mx-auto px-4 py-16 text-center">
-          <div className="card p-10 space-y-4">
-            <CheckCircle size={64} className="text-[#388e3c] mx-auto" />
-            <h1 className="text-2xl font-bold text-gray-800">Order Placed!</h1>
-            <p className="text-gray-500">Your order has been successfully placed. You'll receive a confirmation shortly.</p>
-            {orderId && <p className="text-sm text-gray-400">Order ID: #{orderId}</p>}
-            <div className="flex gap-3 justify-center mt-4">
-              <Link href="/orders" className="btn-secondary px-6 py-2.5 rounded-sm inline-block">My Orders</Link>
-              <Link href="/" className="btn-outline px-6 py-2.5 inline-block">Continue Shopping</Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -88,13 +65,12 @@ export default function ReviewPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Left */}
           <div className="md:col-span-2 space-y-3">
-            {/* Address */}
             {address && (
               <div className="card p-4">
                 <h2 className="font-semibold text-gray-800 flex items-center gap-2 mb-2">
                   <MapPin size={16} className="text-[#2874f0]" /> Delivery to
+                  {address.type && <span className="text-xs bg-blue-50 text-[#2874f0] px-2 py-0.5 rounded-full capitalize">{address.type}</span>}
                 </h2>
                 <p className="text-sm text-gray-700 font-medium">{address.fullName} · {address.phone}</p>
                 <p className="text-sm text-gray-500 mt-0.5">
@@ -104,7 +80,6 @@ export default function ReviewPage() {
               </div>
             )}
 
-            {/* Items */}
             <div className="card p-4">
               <h2 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
                 <Package size={16} className="text-[#2874f0]" /> Order Summary ({items.length} item{items.length > 1 ? 's' : ''})
@@ -126,7 +101,6 @@ export default function ReviewPage() {
             </div>
           </div>
 
-          {/* Right — Price + Pay */}
           <div className="card p-4 h-fit sticky top-32">
             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide border-b pb-2 mb-3">Price Details</h2>
             <div className="space-y-2 text-sm">
@@ -140,11 +114,9 @@ export default function ReviewPage() {
                 <span>Total</span><span>{formatPrice(grandTotal)}</span>
               </div>
             </div>
-
-            <div className="mt-4 space-y-2 text-xs text-gray-500">
-              <p className="flex items-center gap-1">💳 Payment: <strong>Cash on Delivery</strong></p>
+            <div className="mt-4 text-xs text-gray-500">
+              <p>💳 Payment: <strong>Cash on Delivery</strong></p>
             </div>
-
             <button onClick={handlePlaceOrder} disabled={placing}
               className="btn-secondary w-full py-3 mt-4 rounded-sm disabled:opacity-60">
               {placing ? 'Placing Order…' : 'Place Order →'}
