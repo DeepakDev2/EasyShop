@@ -1,8 +1,8 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ShoppingCart, User, ChevronDown, LogOut } from 'lucide-react'
+import { Search, ShoppingCart, User, ChevronDown, LogOut, X, Menu } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
 
@@ -10,30 +10,41 @@ export default function Header() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const mobileInputRef = useRef<HTMLInputElement>(null)
   const itemCount = useCartStore(s => s.itemCount())
   const { user, isLoggedIn, logout } = useAuthStore()
 
+  // Focus mobile search input when shown
+  useEffect(() => {
+    if (showMobileSearch) mobileInputRef.current?.focus()
+  }, [showMobileSearch])
+
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
+    setShowMobileSearch(false)
     if (query.trim()) router.push(`/?q=${encodeURIComponent(query.trim())}`)
     else router.push('/')
   }, [query, router])
 
   return (
     <header className="sticky top-0 z-50 shadow-md" style={{ background: 'linear-gradient(135deg, #2874f0 0%, #1a5dc9 100%)' }}>
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
 
-        {/* Logo */}
-        <Link href="/" className="flex flex-col leading-none min-w-fit">
-          <span className="text-white font-bold text-xl tracking-tight">EasyShop</span>
-          <span className="text-[#FFE500] text-xs italic font-medium">
+      {/* ── Main row ── */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center gap-2 sm:gap-4">
+
+        {/* Logo — always visible */}
+        <Link href="/" className="flex flex-col leading-none shrink-0" onClick={() => setMenuOpen(false)}>
+          <span className="text-white font-bold text-lg sm:text-xl tracking-tight">EasyShop</span>
+          <span className="text-[#FFE500] text-[10px] sm:text-xs italic font-medium hidden sm:block">
             Explore <span className="text-white">Plus</span> ✦
           </span>
         </Link>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
-          <div className="flex items-center bg-white rounded-sm overflow-hidden shadow-sm">
+        {/* Desktop search bar */}
+        <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-2xl">
+          <div className="flex items-center bg-white rounded-sm overflow-hidden shadow-sm w-full">
             <input
               type="text"
               value={query}
@@ -41,30 +52,44 @@ export default function Header() {
               placeholder="Search for products, brands and more"
               className="flex-1 px-4 py-2 text-sm text-gray-800 outline-none placeholder-gray-400"
             />
-            <button
-              type="submit"
-              className="px-4 py-2 text-[#2874f0] hover:bg-blue-50 transition-colors"
-              aria-label="Search"
-            >
+            <button type="submit" className="px-4 py-2 text-[#2874f0] hover:bg-blue-50 transition-colors" aria-label="Search">
               <Search size={20} />
             </button>
           </div>
         </form>
 
-        {/* Nav Links */}
-        <nav className="hidden md:flex items-center gap-6 text-white text-sm font-medium">
+        {/* Mobile: search toggle + spacer */}
+        <div className="flex-1 sm:hidden" />
+
+        {/* Mobile: search icon button */}
+        <button
+          onClick={() => setShowMobileSearch(true)}
+          className="sm:hidden text-white p-2 hover:bg-white/10 rounded transition-colors"
+          aria-label="Open search"
+        >
+          <Search size={22} />
+        </button>
+
+        {/* Cart — always visible */}
+        <Link href="/cart" className="relative text-white p-2 hover:bg-white/10 rounded transition-colors" aria-label="Cart">
+          <ShoppingCart size={22} />
+          {itemCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 bg-[#ff6161] text-white text-[9px] font-bold rounded-full min-w-[17px] h-[17px] flex items-center justify-center px-0.5">
+              {itemCount > 99 ? '99+' : itemCount}
+            </span>
+          )}
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center gap-5 text-white text-sm font-medium">
           {isLoggedIn && user ? (
-            <div className="flex items-center gap-1.5 relative group">
+            <div className="flex items-center gap-1.5 relative group cursor-pointer">
               <User size={16} />
-              <span className="max-w-[80px] truncate text-sm">{user.name.split(' ')[0]}</span>
+              <span className="max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
               <ChevronDown size={12} />
               <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded shadow-lg text-gray-700 text-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
-                <Link href="/orders" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-gray-700">
-                  📦 My Orders
-                </Link>
-                <Link href="/wishlist" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-gray-700">
-                  ❤️ Wishlist
-                </Link>
+                <Link href="/orders" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50">📦 My Orders</Link>
+                <Link href="/wishlist" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50">❤️ Wishlist</Link>
                 <button onClick={() => { logout(); router.push('/') }}
                   className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500 border-t border-gray-100">
                   <LogOut size={14} /> Logout
@@ -76,20 +101,73 @@ export default function Header() {
               <User size={16} /> Login
             </Link>
           )}
-          <Link href="/cart" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors relative">
-            <ShoppingCart size={16} />
-            <span>Cart</span>
-            {itemCount > 0 && (
-              <span className="absolute -top-2.5 -right-3 bg-[#ff6161] text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                {itemCount > 99 ? '99+' : itemCount}
-              </span>
-            )}
-          </Link>
           <button className="flex items-center gap-1 hover:text-yellow-300 transition-colors">
             More <ChevronDown size={14} />
           </button>
         </nav>
+
+        {/* Mobile: hamburger (shows account links) */}
+        <button
+          onClick={() => setMenuOpen(v => !v)}
+          className="md:hidden text-white p-2 hover:bg-white/10 rounded transition-colors"
+          aria-label="Menu"
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
       </div>
+
+      {/* ── Mobile search overlay ── */}
+      {showMobileSearch && (
+        <div className="sm:hidden absolute inset-0 bg-[#2874f0] z-10 flex items-center px-3 h-14">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center bg-white rounded-sm overflow-hidden">
+            <input
+              ref={mobileInputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search products, brands…"
+              className="flex-1 px-3 py-2 text-sm text-gray-800 outline-none"
+            />
+            <button type="submit" className="px-3 py-2 text-[#2874f0]"><Search size={18} /></button>
+          </form>
+          <button onClick={() => setShowMobileSearch(false)} className="text-white ml-2 p-1">
+            <X size={22} />
+          </button>
+        </div>
+      )}
+
+      {/* ── Mobile dropdown menu ── */}
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-blue-200 shadow-lg">
+          {isLoggedIn && user ? (
+            <>
+              <div className="px-4 py-3 bg-blue-50 flex items-center gap-2">
+                <User size={16} className="text-[#2874f0]" />
+                <span className="text-sm font-semibold text-gray-800">{user.name}</span>
+              </div>
+              <Link href="/orders" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                📦 My Orders
+              </Link>
+              <Link href="/wishlist" onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                ❤️ Wishlist
+              </Link>
+              <button onClick={() => { logout(); router.push('/'); setMenuOpen(false) }}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 w-full">
+                <LogOut size={14} /> Logout
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-4 flex gap-3">
+              <Link href="/auth/login" onClick={() => setMenuOpen(false)}
+                className="flex-1 text-center btn-secondary py-2.5 rounded-sm text-sm">Login</Link>
+              <Link href="/auth/register" onClick={() => setMenuOpen(false)}
+                className="flex-1 text-center btn-outline py-2.5 text-sm">Sign Up</Link>
+            </div>
+          )}
+        </div>
+      )}
     </header>
   )
 }

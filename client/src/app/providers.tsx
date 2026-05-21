@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
+import NavigationProgress from '@/components/layout/NavigationProgress'
 
 function AuthValidator() {
   const { isLoggedIn, token, logout } = useAuthStore()
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }))
   return (
     <QueryClientProvider client={queryClient}>
+      <NavigationProgress />
       <AuthValidator />
       {children}
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />

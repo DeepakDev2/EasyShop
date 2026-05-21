@@ -70,12 +70,31 @@ body {
   .skeleton { @apply bg-gray-200 animate-pulse rounded; }
 }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; }
 ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
 
-/* Category Nav horizontal scroll hide scrollbar */
+/* ── Hide scrollbar (legacy + Tailwind utility) ── */
 .hide-scrollbar { scrollbar-width: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
+/* Tailwind v3 scrollbar-hide: override */
+.scrollbar-hide { scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── iOS safe area bottom padding (for MobileNav) ── */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ── Smooth page transitions ── */
+html { scroll-behavior: smooth; }
+
+/* ── Line clamp utilities ── */
+.line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+
+/* ── nprogress bar custom color ── */
+#nprogress .bar { background: #FFE500 !important; height: 3px !important; }
+#nprogress .peg { box-shadow: 0 0 10px #FFE500, 0 0 5px #FFE500 !important; }
+
