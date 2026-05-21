@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Grid, ShoppingCart, User } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { useState, useEffect } from 'react'
 
 const NAV = [
   { href: '/', icon: Home, label: 'Home' },
@@ -14,7 +15,12 @@ const NAV = [
 export default function MobileNav() {
   const pathname = usePathname()
   const itemCount = useCartStore(s => s.itemCount())
+  const [mounted, setMounted] = useState(false)
   const isAuth = pathname.startsWith('/auth')
+
+  // Prevent hydration mismatch from Zustand persist
+  useEffect(() => { setMounted(true) }, [])
+
   if (isAuth) return null
 
   return (
@@ -30,7 +36,8 @@ export default function MobileNav() {
               }`}>
               <div className="relative">
                 <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-                {isCart && itemCount > 0 && (
+                {/* Only show badge after mount to avoid hydration mismatch */}
+                {mounted && isCart && itemCount > 0 && (
                   <span className="absolute -top-1.5 -right-2 bg-[#fb641b] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                     {itemCount > 9 ? '9+' : itemCount}
                   </span>

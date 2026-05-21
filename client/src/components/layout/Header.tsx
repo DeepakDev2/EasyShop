@@ -12,9 +12,13 @@ export default function Header() {
   const [query, setQuery] = useState(searchParams.get('q') || '')
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const mobileInputRef = useRef<HTMLInputElement>(null)
   const itemCount = useCartStore(s => s.itemCount())
   const { user, isLoggedIn, logout } = useAuthStore()
+
+  // Prevent hydration mismatch — only show client-dependent UI after mount
+  useEffect(() => { setMounted(true) }, [])
 
   // Focus mobile search input when shown
   useEffect(() => {
@@ -73,7 +77,7 @@ export default function Header() {
         {/* Cart — always visible */}
         <Link href="/cart" className="relative text-white p-2 hover:bg-white/10 rounded transition-colors" aria-label="Cart">
           <ShoppingCart size={22} />
-          {itemCount > 0 && (
+          {mounted && itemCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 bg-[#ff6161] text-white text-[9px] font-bold rounded-full min-w-[17px] h-[17px] flex items-center justify-center px-0.5">
               {itemCount > 99 ? '99+' : itemCount}
             </span>
@@ -82,7 +86,7 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-5 text-white text-sm font-medium">
-          {isLoggedIn && user ? (
+          {mounted && isLoggedIn && user ? (
             <div className="flex items-center gap-1.5 relative group cursor-pointer">
               <User size={16} />
               <span className="max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
@@ -137,7 +141,7 @@ export default function Header() {
       )}
 
       {/* ── Mobile dropdown menu ── */}
-      {menuOpen && (
+      {mounted && menuOpen && (
         <div className="md:hidden bg-white border-t border-blue-200 shadow-lg">
           {isLoggedIn && user ? (
             <>

@@ -8,6 +8,7 @@ import { formatPrice, getPrimaryImage } from '@/lib/utils'
 import { useWishlistStore } from '@/store/wishlistStore'
 import { useAuthStore } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export default function ProductCard({ product }: { product: Product }) {
   const img = getPrimaryImage(product.images)
@@ -15,7 +16,10 @@ export default function ProductCard({ product }: { product: Product }) {
   const { toggle, isWished } = useWishlistStore()
   const { isLoggedIn } = useAuthStore()
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const wished = isWished(product.id)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -53,11 +57,11 @@ export default function ProductCard({ product }: { product: Product }) {
           <button
             onClick={handleWishlist}
             className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm"
-            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={mounted && wished ? 'Remove from wishlist' : 'Add to wishlist'}
           >
             <Heart
               size={16}
-              className={wished ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+              className={mounted && wished ? 'fill-red-500 text-red-500' : 'text-gray-400'}
             />
           </button>
         </div>
