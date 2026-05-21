@@ -86,7 +86,7 @@
 | Phase 2 — Frontend: Product Listing | ✅ **COMPLETE** | Homepage, grid, filters, search, category nav |
 | Phase 3 — Product Detail Page | ✅ **COMPLETE** | Image carousel, specs, qty, offers, related |
 | Phase 4 — Shopping Cart | ✅ **COMPLETE** | Zustand store, cart page, qty controls, price summary, badge |
-| Phase 5 — Checkout & Order Placement | ⏳ Not started | |
+| Phase 5 — Checkout & Order Placement | ✅ **COMPLETE** | Address form, review page, order API, stock decrement, order history |
 | Phase 6 — User Authentication | ✅ **COMPLETE** | JWT, bcrypt, register/login pages, user dropdown |
 | Phase 7 — Good-to-Have Features | ⏳ Not started | |
 | Phase 8 — Responsive Design & Polish | ⏳ Not started | |
