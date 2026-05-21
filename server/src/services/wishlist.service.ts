@@ -2,13 +2,16 @@ import { prisma } from '../config/db'
 import { createError } from '../middleware/errorHandler'
 
 export const toggleWishlist = async (userId: number, productId: number) => {
-  const existing = await prisma.wishlistItem.findUnique({
-    where: { userId_productId: { userId, productId } },
-  })
-  if (existing) {
+  // Attempt delete first — one query for the remove path instead of two
+  try {
     await prisma.wishlistItem.delete({ where: { userId_productId: { userId, productId } } })
     return { added: false }
+  } catch (err: unknown) {
+    // P2025 = record not found — item wasn't in wishlist, proceed to add
+    if ((err as { code?: string }).code !== 'P2025') throw err
   }
+
+  // Validate product is active before creating
   const product = await prisma.product.findUnique({ where: { id: productId, isActive: true } })
   if (!product) throw createError('Product not found', 404, 'NOT_FOUND')
   await prisma.wishlistItem.create({ data: { userId, productId } })

@@ -243,7 +243,9 @@ export default function AddressPage() {
                       placeholder="6-digit pincode"
                     />
                     {pincodeLoading && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <div className="w-4 h-4 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin" />
+                      </div>
                     )}
                   </div>
                   {pincodeHint && (

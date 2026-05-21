@@ -36,17 +36,28 @@ export const useWishlistStore = create<WishlistStore>()(
           return !already
         }
 
-        // Logged in — sync with server
+        // Logged in — optimistic update, revert on error
+        set(state => ({
+          ids: already ? state.ids.filter(id => id !== productId) : [...state.ids, productId],
+        }))
+
         try {
           const res = await api.post(`/wishlist/${productId}`)
           const { added } = res.data
+          // Reconcile with server truth
           set(state => ({
-            ids: added ? [...state.ids, productId] : state.ids.filter(id => id !== productId),
+            ids: added
+              ? [...new Set([...state.ids, productId])]
+              : state.ids.filter(id => id !== productId),
           }))
           return added
         } catch {
+          // Revert optimistic update
+          set(state => ({
+            ids: already ? [...state.ids, productId] : state.ids.filter(id => id !== productId),
+          }))
           toast.error('Could not update wishlist')
-          return false
+          return already
         }
       },
 

@@ -12,6 +12,7 @@ import SpecsTable from '@/components/product/SpecsTable'
 import ProductCard from '@/components/product/ProductCard'
 import { useProduct } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/utils'
+import { lookupPincode } from '@/lib/pincode'
 
 function RatingStar({ rating }: { rating: number }) {
   const color = rating >= 4 ? 'bg-[#388e3c]' : rating >= 3 ? 'bg-[#ff9f00]' : 'bg-[#ff6161]'
@@ -43,6 +44,8 @@ export default function ProductDetailPage() {
   const { data: product, isLoading, isError } = useProduct(slug)
   const [qty, setQty] = useState(1)
   const [pincode, setPincode] = useState('')
+  const [pincodeCity, setPincodeCity] = useState<string | null>(null)
+  const [pincodeLoading, setPincodeLoading] = useState(false)
   const addItem = useCartStore(s => s.addItem)
   const { toggle, isWished } = useWishlistStore()
 
@@ -205,18 +208,43 @@ export default function ProductDetailPage() {
             {/* Delivery check */}
             <div className="pb-3 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-700 mb-2">Delivery</p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <input
                   type="text" maxLength={6} placeholder="Enter Pincode"
-                  value={pincode} onChange={e => setPincode(e.target.value.replace(/\D/, ''))}
+                  value={pincode} onChange={e => { setPincode(e.target.value.replace(/\D/, '')); setPincodeCity(null) }}
                   className="input-base w-36 text-sm"
                 />
-                <button className="text-[#2874f0] text-sm font-semibold hover:underline">Check</button>
+                <button
+                  disabled={pincode.length !== 6 || pincodeLoading}
+                  onClick={async () => {
+                    setPincodeLoading(true)
+                    setPincodeCity(null)
+                    try {
+                      const result = await lookupPincode(pincode)
+                      setPincodeCity(`${result.city}, ${result.state}`)
+                    } catch {
+                      toast.error('Pincode not found')
+                    } finally {
+                      setPincodeLoading(false)
+                    }
+                  }}
+                  className="text-[#2874f0] text-sm font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  {pincodeLoading
+                    ? <span className="w-3.5 h-3.5 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin inline-block" />
+                    : 'Check'}
+                </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1.5">
-                <Truck size={11} className="inline mr-1" />
-                Usually delivered in 3–5 days
-              </p>
+              {pincodeCity
+                ? <p className="text-xs text-[#388e3c] mt-1.5 font-medium">
+                    <Truck size={11} className="inline mr-1" />
+                    Delivery available to {pincodeCity} · Usually 3–5 days
+                  </p>
+                : <p className="text-xs text-gray-500 mt-1.5">
+                    <Truck size={11} className="inline mr-1" />
+                    Usually delivered in 3–5 days
+                  </p>
+              }
             </div>
 
             {/* Guarantees */}
