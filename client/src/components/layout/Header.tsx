@@ -58,9 +58,12 @@ export default function Header() {
               <User size={16} />
               <span className="max-w-[80px] truncate text-sm">{user.name.split(' ')[0]}</span>
               <ChevronDown size={12} />
-              <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded shadow-lg text-gray-700 text-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
+              <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded shadow-lg text-gray-700 text-sm opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
+                <Link href="/orders" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-gray-700">
+                  📦 My Orders
+                </Link>
                 <button onClick={() => { logout(); router.push('/') }}
-                  className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500">
+                  className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500 border-t border-gray-100">
                   <LogOut size={14} /> Logout
                 </button>
               </div>

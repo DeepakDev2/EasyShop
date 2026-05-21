@@ -109,7 +109,6 @@ model Address {
   isDefault Boolean @default(false) @map("is_default")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
 
   @@map("addresses")
 }
@@ -136,19 +135,18 @@ model Order {
   id             Int      @id @default(autoincrement())
   orderNumber    String   @unique @db.VarChar(20) @map("order_number")
   userId         Int?     @map("user_id")
-  addressId      Int?     @map("address_id")
-  status         String   @default("pending") @db.VarChar(30) // pending|confirmed|shipped|delivered|cancelled
-  subtotal       Decimal  @db.Decimal(10, 2)
+  status         String   @default("placed") @db.VarChar(30)
+  subtotal       Decimal  @default(0) @db.Decimal(10, 2)
   discount       Decimal  @default(0) @db.Decimal(10, 2)
   deliveryCharge Decimal  @default(0) @db.Decimal(10, 2) @map("delivery_charge")
   total          Decimal  @db.Decimal(10, 2)
   paymentMethod  String   @default("cod") @db.VarChar(30) @map("payment_method")
   paymentStatus  String   @default("unpaid") @db.VarChar(20) @map("payment_status")
+  shippingAddress String? @map("shipping_address") @db.Text
   placedAt       DateTime @default(now()) @map("placed_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   user      User?       @relation(fields: [userId], references: [id])
-  address   Address?    @relation(fields: [addressId], references: [id])
   orderItems OrderItem[]
 
   @@map("orders")

@@ -35,13 +35,13 @@ app.get('/health', (req, res) => {
 import productRoutes from './routes/product.routes'
 import categoryRoutes from './routes/category.routes'
 import authRoutes from './routes/auth.routes'
+import orderRoutes from './routes/order.routes'
 
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/products', productRoutes)
 app.use('/api/v1/categories', categoryRoutes)
-// app.use('/api/v1/cart', cartRoutes)       — Phase 4
-// app.use('/api/v1/orders', orderRoutes)    — Phase 5
-// app.use('/api/v1/addresses', addressRoutes) — Phase 5
+app.use('/api/v1/orders', orderRoutes)
+// app.use('/api/v1/addresses', addressRoutes) — Phase 7
 // app.use('/api/v1/wishlist', wishlistRoutes) — Phase 7
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
