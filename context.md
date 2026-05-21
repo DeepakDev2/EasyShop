@@ -85,7 +85,7 @@
 | **Phase 1** — Core Backend: Products & Categories | ✅ **COMPLETE** | See details below |
 | Phase 2 — Frontend: Product Listing | ✅ **COMPLETE** | Homepage, grid, filters, search, category nav |
 | Phase 3 — Product Detail Page | ✅ **COMPLETE** | Image carousel, specs, qty, offers, related |
-| Phase 4 — Shopping Cart | ⏳ Not started | |
+| Phase 4 — Shopping Cart | ✅ **COMPLETE** | Zustand store, cart page, qty controls, price summary, badge |
 | Phase 5 — Checkout & Order Placement | ⏳ Not started | |
 | Phase 6 — User Authentication | ⏳ Not started | |
 | Phase 7 — Good-to-Have Features | ⏳ Not started | |
