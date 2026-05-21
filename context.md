@@ -144,12 +144,13 @@ Files created in `server/`:
 
 ## ⚠️ PENDING ACTION REQUIRED
 
-### You must set up Neon before Phase 1 can run:
+### ✅ Neon is configured and tested!
+- `DATABASE_URL` set in `server/.env`
+- Migration `20260521101927_init` applied — all 9 tables created on Neon
+- DB connection verified: `users: 0 | categories: 0 | products: 0 | orders: 0`
 
-1. Go to [https://console.neon.tech](https://console.neon.tech)
-2. Create a new project (choose a region close to you)
-3. Copy the **Connection String** (it looks like: `postgresql://user:pass@ep-xxx.neon.tech/dbname?sslmode=require`)
-4. Open `server/.env` and replace the `DATABASE_URL` placeholder with your actual connection string
+### Next: Start Phase 1
+Say "Start Phase 1" to begin building the Products & Categories backend API.
 
 ---
 
