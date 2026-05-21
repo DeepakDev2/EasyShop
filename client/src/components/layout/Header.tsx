@@ -62,6 +62,9 @@ export default function Header() {
                 <Link href="/orders" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-gray-700">
                   📦 My Orders
                 </Link>
+                <Link href="/wishlist" className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-gray-700">
+                  ❤️ Wishlist
+                </Link>
                 <button onClick={() => { logout(); router.push('/') }}
                   className="flex items-center gap-2 w-full px-4 py-2.5 hover:bg-gray-50 text-red-500 border-t border-gray-100">
                   <LogOut size={14} /> Logout

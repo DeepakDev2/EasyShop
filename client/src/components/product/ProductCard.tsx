@@ -1,13 +1,31 @@
 'use client'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Star } from 'lucide-react'
+import { Star, Heart } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { Product } from '@/types'
 import { formatPrice, getPrimaryImage } from '@/lib/utils'
+import { useWishlistStore } from '@/store/wishlistStore'
+import { useAuthStore } from '@/store/authStore'
+import { useRouter } from 'next/navigation'
 
 export default function ProductCard({ product }: { product: Product }) {
   const img = getPrimaryImage(product.images)
   const starColor = product.rating >= 4 ? 'star-badge-good' : product.rating >= 3 ? 'star-badge-avg' : 'star-badge-bad'
+  const { toggle, isWished } = useWishlistStore()
+  const { isLoggedIn } = useAuthStore()
+  const router = useRouter()
+  const wished = isWished(product.id)
+
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!isLoggedIn) { router.push('/auth/login'); return }
+    const added = await toggle(product.id)
+    toast(added ? 'Added to Wishlist ❤️' : 'Removed from Wishlist', {
+      icon: added ? '❤️' : '🤍',
+    })
+  }
 
   return (
     <Link href={`/product/${product.slug}`} className="block">
@@ -31,6 +49,17 @@ export default function ProductCard({ product }: { product: Product }) {
               <span className="text-gray-500 font-semibold text-sm">Out of Stock</span>
             </div>
           )}
+          {/* Wishlist heart button */}
+          <button
+            onClick={handleWishlist}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm"
+            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            <Heart
+              size={16}
+              className={wished ? 'fill-red-500 text-red-500' : 'text-gray-400'}
+            />
+          </button>
         </div>
 
         {/* Info */}

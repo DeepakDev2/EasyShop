@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import CategoryNav from '@/components/layout/CategoryNav'
+import Footer from '@/components/layout/Footer'
 import ProductCard from '@/components/product/ProductCard'
 import ProductSkeleton from '@/components/product/ProductSkeleton'
 import FilterSidebar from '@/components/product/FilterSidebar'
@@ -175,6 +176,7 @@ function HomePage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }
