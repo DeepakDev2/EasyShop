@@ -2,9 +2,11 @@
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { ShoppingCart, Zap, Star, Truck, Shield, RotateCcw, ChevronRight, Minus, Plus } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import ImageCarousel from '@/components/product/ImageCarousel'
+import { useCartStore } from '@/store/cartStore'
 import SpecsTable from '@/components/product/SpecsTable'
 import ProductCard from '@/components/product/ProductCard'
 import { useProduct } from '@/hooks/useProducts'
@@ -40,6 +42,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading, isError } = useProduct(slug)
   const [qty, setQty] = useState(1)
   const [pincode, setPincode] = useState('')
+  const addItem = useCartStore(s => s.addItem)
 
   if (isLoading) return <><Header /><Skeleton /></>
   if (isError || !product) return (
@@ -83,17 +86,17 @@ export default function ProductDetailPage() {
           <div className="p-6 border-r border-gray-100">
             <ImageCarousel images={product.images} />
 
-            {/* Action buttons — sticky on mobile */}
+            {/* Action buttons */}
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => router.push('/cart')}
+                onClick={() => { addItem(product, qty); toast.success('Added to cart!', { icon: '🛒' }); }}
                 disabled={product.stock === 0}
                 className="flex-1 flex items-center justify-center gap-2 btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ShoppingCart size={18} /> ADD TO CART
               </button>
               <button
-                onClick={() => router.push('/checkout/address')}
+                onClick={() => { addItem(product, qty); router.push('/cart') }}
                 disabled={product.stock === 0}
                 className="flex-1 flex items-center justify-center gap-2 btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >

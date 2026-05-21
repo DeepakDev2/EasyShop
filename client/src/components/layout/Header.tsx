@@ -3,11 +3,13 @@ import { useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search, ShoppingCart, User, ChevronDown } from 'lucide-react'
+import { useCartStore } from '@/store/cartStore'
 
 export default function Header() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
+  const itemCount = useCartStore(s => s.itemCount())
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
@@ -52,9 +54,14 @@ export default function Header() {
           <Link href="/auth/login" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors">
             <User size={16} /> Login
           </Link>
-          <Link href="/cart" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors">
+          <Link href="/cart" className="flex items-center gap-1.5 hover:text-yellow-300 transition-colors relative">
             <ShoppingCart size={16} />
             <span>Cart</span>
+            {itemCount > 0 && (
+              <span className="absolute -top-2.5 -right-3 bg-[#ff6161] text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                {itemCount > 99 ? '99+' : itemCount}
+              </span>
+            )}
           </Link>
           <button className="flex items-center gap-1 hover:text-yellow-300 transition-colors">
             More <ChevronDown size={14} />
