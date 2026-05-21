@@ -2,6 +2,7 @@ import { prisma } from '../config/db'
 import { generateOrderNumber } from '../utils/helpers'
 import { CreateOrderInput } from '../schemas/order.schema'
 import { createError } from '../middleware/errorHandler'
+import { sendOrderConfirmation } from '../utils/email'
 
 export const createOrder = async (userId: number, input: CreateOrderInput) => {
   const productIds = input.items.map(i => i.productId)
@@ -51,8 +52,31 @@ export const createOrder = async (userId: number, input: CreateOrderInput) => {
     return newOrder
   })
 
+  // Fire-and-forget email — don't await, won't block the API response
+  prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
+    .then(user => {
+      if (!user) return
+      return sendOrderConfirmation({
+        orderNumber: order.orderNumber,
+        userEmail: user.email,
+        userName: user.name,
+        items: order.orderItems.map(i => ({
+          productName: i.productName,
+          productImg: i.productImg,
+          quantity: i.quantity,
+          unitPrice: Number(i.unitPrice),
+          totalPrice: Number(i.totalPrice),
+        })),
+        shippingAddress: order.shippingAddress ?? '',
+        total: Number(order.total),
+        placedAt: order.placedAt,
+      })
+    })
+    .catch(err => console.error('[Email] Failed to send order confirmation:', err.message))
+
   return order
 }
+
 
 export const getUserOrders = async (userId: number) => {
   return prisma.order.findMany({
