@@ -1,304 +1,215 @@
-# EasyShop — Project Context & Progress Log
+# EasyShop — Project Context
 
-> **Purpose**: This file is a complete, living context document. If you lose your chat, read this file first — it tells you exactly what has been done, how, and what to do next.
+> **Read this first** if you're a new LLM or resuming work. It contains everything needed to understand and continue this project.
 
 ---
 
-## Project Overview
+## Overview
 
-**Name**: EasyShop  
-**Type**: Full-stack e-commerce platform (Flipkart-style)  
-**Repo Root**: `/home/deepak-kumar/Documents/pro2/EasyShop`  
-**Git Branch**: `main`  
-**Plan File**: `plan.md` (1220 lines, full phase-by-phase blueprint)  
-**Last Updated**: 2026-05-21 (all gaps through Phase 7 resolved)
+**EasyShop** — Full-stack Flipkart-style e-commerce platform.  
+**Root**: `/home/deepak-kumar/Documents/pro2/EasyShop`  
+**Git branch**: `main` | **Package manager**: `pnpm` (workspace monorepo)  
+**Last updated**: 2026-05-22
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
+| Layer | Tech |
 |---|---|
-| Frontend | Next.js 14 (App Router), TailwindCSS |
-| Backend | Node.js + Express.js + TypeScript |
-| Database | PostgreSQL via **Neon** (serverless) |
+| Frontend | Next.js 14 (App Router), CSS (global), Zustand, React Query, Axios |
+| Backend | Node.js + Express + TypeScript |
+| Database | PostgreSQL on **Neon** (serverless, free tier — auto-pauses after 5 min idle) |
 | ORM | Prisma v5 |
 | Auth | JWT (`jsonwebtoken` + `bcryptjs`) |
-| Package Manager | **pnpm** (v11.1.3) |
-| State (frontend) | Zustand (cart, auth, wishlist — all persisted) |
-| Data Fetching | @tanstack/react-query |
-| HTTP Client | axios (with JWT interceptor) |
-| Validation | zod (server-side schemas) |
-| Email | nodemailer (planned, not yet implemented) |
+| Email | Resend (API key in `.env`) |
+| Validation | Zod (server-side) |
+| Testing | Jest + Supertest (backend), Jest + RTL (frontend) |
 
 ---
 
 ## How to Run
 
 ```bash
-# From root — install everything
-pnpm install
+pnpm install              # from root, installs all workspaces
+pnpm dev                  # starts both (server :5000, client :3000)
+pnpm dev:server           # backend only
+pnpm dev:client           # frontend only
 
-# Start both frontend + backend
-pnpm dev
-
-# Backend only: http://localhost:5000
-pnpm dev:server
-
-# Frontend only: http://localhost:3000
-pnpm dev:client
-
-# Prisma tools (from server/)
-cd server
-pnpm prisma:migrate    # Run DB migrations
-pnpm prisma:seed       # Seed categories + products
-pnpm prisma:studio     # GUI at http://localhost:5555
+# From server/
+pnpm prisma:migrate       # run migrations
+pnpm prisma:seed          # seed categories + products
+pnpm prisma:studio        # Prisma GUI at :5555
+pnpm test                 # Jest backend tests
 ```
 
 ---
 
-## Monorepo Structure
+## Directory Structure
 
 ```
-/home/deepak-kumar/Documents/pro2/EasyShop/
-├── client/                          ← Next.js 14 frontend
-│   └── src/
-│       ├── app/
-│       │   ├── page.tsx             ← Homepage (product grid, filters, search)
-│       │   ├── layout.tsx           ← Root layout (Providers + MobileNav)
-│       │   ├── not-found.tsx        ← Custom 404 page
-│       │   ├── middleware.ts        ← Route protection (checkout/orders/wishlist)
-│       │   ├── product/[slug]/      ← Product detail page
-│       │   ├── cart/                ← Shopping cart page
-│       │   ├── checkout/
-│       │   │   ├── address/         ← Step 1: Address form (type, pincode auto-fill)
-│       │   │   └── review/          ← Step 2: Review + place order
-│       │   ├── order-success/       ← Confetti success page with delivery estimate
-│       │   ├── orders/
-│       │   │   ├── page.tsx         ← My Orders list (clickable)
-│       │   │   └── [id]/page.tsx    ← Order detail + status progress tracker
-│       │   ├── wishlist/            ← Wishlist page (remove + move to cart)
-│       │   └── auth/
-│       │       ├── login/           ← Login (with ?redirect= support)
-│       │       └── register/        ← Register (strength indicator + confirm pw)
-│       ├── components/
-│       │   ├── layout/
-│       │   │   ├── Header.tsx       ← Sticky blue header, cart badge, user dropdown
-│       │   │   ├── CategoryNav.tsx  ← Horizontal scrollable category strip
-│       │   │   ├── Footer.tsx       ← Dark footer with links + social icons
-│       │   │   └── MobileNav.tsx    ← Bottom mobile nav (Home/Categories/Cart/Account)
-│       │   ├── product/
-│       │   │   ├── ProductCard.tsx  ← Card with ❤ wishlist button, discount badge
-│       │   │   ├── ProductSkeleton.tsx
-│       │   │   ├── FilterSidebar.tsx
-│       │   │   ├── ImageCarousel.tsx
-│       │   │   └── SpecsTable.tsx
-│       │   └── cart/
-│       │       ├── CartItem.tsx
-│       │       └── PriceSummary.tsx
-│       ├── store/
-│       │   ├── cartStore.ts         ← Zustand cart (items, qty, totals, persist)
-│       │   ├── authStore.ts         ← Zustand auth (user, token, cookie sync)
-│       │   └── wishlistStore.ts     ← Zustand wishlist (guest + server sync)
-│       ├── hooks/
-│       │   ├── useProducts.ts       ← React Query (list + single product)
-│       │   └── useCategories.ts     ← React Query categories
-│       ├── lib/
-│       │   ├── api.ts               ← Axios instance (JWT interceptor)
-│       │   └── utils.ts             ← formatPrice, formatDate, getPrimaryImage
-│       └── types/index.ts           ← All TypeScript types
+EasyShop/
+├── client/src/
+│   ├── app/
+│   │   ├── page.tsx                  ← Homepage: product grid, filters, search
+│   │   ├── layout.tsx                ← Root layout (Providers + MobileNav)
+│   │   ├── not-found.tsx             ← Custom 404
+│   │   ├── middleware.ts             ← Route protection (checkout/orders/wishlist → login)
+│   │   ├── product/[slug]/page.tsx   ← Product detail
+│   │   ├── cart/page.tsx             ← Cart
+│   │   ├── checkout/address/page.tsx ← Step 1: address (saves to DB if logged in)
+│   │   ├── checkout/review/page.tsx  ← Step 2: review + place order
+│   │   ├── order-success/page.tsx    ← Confetti + delivery estimate
+│   │   ├── orders/page.tsx           ← My Orders list
+│   │   ├── orders/[id]/page.tsx      ← Order detail + status tracker
+│   │   ├── wishlist/page.tsx         ← Wishlist page
+│   │   └── auth/{login,register}/   ← Auth pages
+│   ├── components/
+│   │   ├── layout/Header.tsx         ← Sticky header, cart badge (mounted guard), user dropdown
+│   │   ├── layout/CategoryNav.tsx    ← Horizontal scrollable category strip
+│   │   ├── layout/Footer.tsx         ← Dark footer
+│   │   ├── layout/MobileNav.tsx      ← Bottom nav (mounted guard on cart badge)
+│   │   ├── product/ProductCard.tsx   ← Card + ❤ wishlist (mounted guard on heart fill)
+│   │   ├── product/FilterSidebar.tsx
+│   │   ├── product/ImageCarousel.tsx
+│   │   ├── product/SpecsTable.tsx
+│   │   ├── cart/CartItem.tsx
+│   │   └── cart/PriceSummary.tsx
+│   ├── store/
+│   │   ├── cartStore.ts      ← Zustand + localStorage persist; merges guest cart on login
+│   │   ├── authStore.ts      ← Zustand + localStorage; sets cookie for Next.js middleware
+│   │   └── wishlistStore.ts  ← Zustand + localStorage; syncs with API when logged in
+│   ├── hooks/
+│   │   ├── useProducts.ts    ← React Query: product list + single product
+│   │   └── useCategories.ts  ← React Query: categories
+│   ├── lib/
+│   │   ├── api.ts            ← Axios instance with JWT interceptor
+│   │   ├── utils.ts          ← formatPrice, formatDate, getPrimaryImage
+│   │   ├── filters.ts        ← Filter URL param helpers
+│   │   ├── india-states.ts   ← Indian states list
+│   │   ├── pincode.ts        ← Pincode → city/state lookup (postal API)
+│   │   └── token.ts          ← JWT decode helpers
+│   └── types/index.ts        ← All shared TypeScript types
 │
-└── server/                          ← Express.js REST API
-    └── src/
-        ├── config/
-        │   ├── env.ts               ← Typed env validation
-        │   └── db.ts                ← Prisma client singleton
-        ├── middleware/
-        │   ├── auth.ts              ← JWT authenticate / optionalAuth / requireAdmin
-        │   ├── errorHandler.ts      ← Global error handler + asyncHandler
-        │   └── validate.ts          ← Zod middleware
-        ├── schemas/
-        │   ├── product.schema.ts
-        │   ├── auth.schema.ts
-        │   └── order.schema.ts
-        ├── services/
-        │   ├── product.service.ts
-        │   ├── category.service.ts
-        │   ├── auth.service.ts      ← register, login, getProfile
-        │   ├── order.service.ts     ← createOrder (transactional), getUserOrders, getOrderById
-        │   └── wishlist.service.ts  ← toggleWishlist, getWishlist
-        ├── controllers/             ← (product, category, auth, order controllers)
-        ├── routes/                  ← (product, category, auth, order, wishlist routes)
-        ├── utils/helpers.ts         ← computeDiscountPct, generateOrderNumber, formatProduct
-        └── index.ts                 ← Express entry: helmet, CORS, morgan, all routes
+└── server/src/
+    ├── config/
+    │   ├── env.ts            ← Typed env (validates required vars on startup)
+    │   └── db.ts             ← Prisma singleton with explicit datasourceUrl (fixes Neon cold-start)
+    ├── middleware/
+    │   ├── auth.ts           ← authenticate / optionalAuth / requireAdmin
+    │   ├── errorHandler.ts   ← asyncHandler, createError, global error handler
+    │   └── validate.ts       ← Zod middleware
+    ├── schemas/              ← auth, product, order, address, cart schemas
+    ├── services/             ← auth, product, category, order, wishlist, address, cart, pincode
+    ├── controllers/          ← auth, product, category, order, wishlist, address, cart, pincode
+    ├── routes/               ← all routes (see API table below)
+    ├── __mocks__/db.ts       ← Prisma mock for Jest
+    ├── __tests__/            ← auth, products, orders test suites (30 tests, all passing)
+    └── index.ts              ← Express app: helmet, CORS, morgan, all routes mounted
 ```
 
 ---
 
-## Phase Completion Status
+## API Endpoints
 
-| Phase | Status | Notes |
-|---|---|---|
-| **Phase 0** — Setup & Scaffolding | ✅ **COMPLETE** | Monorepo, Express, Next.js 14, Prisma, Neon DB |
-| **Phase 1** — Products & Categories API | ✅ **COMPLETE** | Full CRUD, filters, search, pagination, seed data |
-| **Phase 2** — Frontend Product Listing | ✅ **COMPLETE** | Homepage, grid, filters, search, category nav |
-| **Phase 3** — Product Detail Page | ✅ **COMPLETE** | Image carousel, specs, qty, offers, related products |
-| **Phase 4** — Shopping Cart | ✅ **COMPLETE** | Zustand store, cart page, qty controls, price summary, badge |
-| **Phase 5** — Checkout & Order Placement | ✅ **COMPLETE** | Address form, review page, order API, stock decrement, order history |
-| **Phase 6** — User Authentication | ✅ **COMPLETE** | JWT, bcrypt, register/login, user dropdown, cookie sync |
-| **Phase 7** — Good-to-Have Features | ✅ **COMPLETE** | Wishlist, Footer, 404 page, all plan gaps resolved |
-| **Phase 8** — Responsive Design & Polish | ⏳ Partially done | Mobile bottom nav ✅, mobile grid ✅ — full audit pending |
-| **Phase 9** — Testing & QA | ⏳ Not started | Jest + Supertest backend tests |
-| **Phase 10** — Deployment | ⏳ Not started | Vercel (frontend) + Railway/Render (backend) |
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/health` | — | Health check |
+| GET | `/api/v1/categories` | — | All categories |
+| GET | `/api/v1/products` | — | Paginated products (filters, search, sort) |
+| GET | `/api/v1/products/:slug` | — | Product detail + related |
+| POST | `/api/v1/auth/register` | — | Register → returns JWT + user |
+| POST | `/api/v1/auth/login` | — | Login → returns JWT + user |
+| GET | `/api/v1/auth/me` | JWT | Current user profile |
+| POST | `/api/v1/orders` | JWT | Place order (transactional) |
+| GET | `/api/v1/orders/my` | JWT | User's orders |
+| GET | `/api/v1/orders/:id` | JWT | Order detail |
+| PATCH | `/api/v1/orders/:id/cancel` | JWT | Cancel order |
+| GET | `/api/v1/wishlist` | JWT | Get wishlist |
+| POST | `/api/v1/wishlist/:productId` | JWT | Toggle wishlist |
+| GET | `/api/v1/addresses` | JWT | Get saved addresses |
+| POST | `/api/v1/addresses` | JWT | Save new address |
+| PUT | `/api/v1/addresses/:id` | JWT | Update address |
+| DELETE | `/api/v1/addresses/:id` | JWT | Delete address |
+| PATCH | `/api/v1/addresses/:id/default` | JWT | Set default address |
+| GET | `/api/v1/cart` | JWT | Get server-side cart |
+| POST | `/api/v1/cart` | JWT | Add/update cart item |
+| DELETE | `/api/v1/cart/:productId` | JWT | Remove cart item |
+| GET | `/api/v1/pincode/:pin` | — | Pincode → city/state |
+
+**Product query params**: `category`, `q`, `minPrice`, `maxPrice`, `brand`, `rating`, `sort` (price_asc/price_desc/rating/newest), `page`, `limit`
 
 ---
 
 ## Database
 
-- **Host**: Neon (serverless PostgreSQL)
-- **Connection**: `DATABASE_URL` in `server/.env`
-- **Migrations**: `server/prisma/migrations/` (2 migrations applied)
-  - `20260521101927_init` — initial 9 tables
-  - `20260521125851_add_shipping_address` — added `shipping_address` text column to `orders`
+- **Host**: Neon (serverless PostgreSQL, auto-pauses on free tier)
+- **Config**: `server/.env` → `DATABASE_URL` (must include `?sslmode=require&connect_timeout=30&pool_timeout=30`)
+- **Prisma client**: initialized with `datasourceUrl: env.DATABASE_URL` explicitly (prevents cold-start connection failure)
 
-### Schema (9 models)
+### Migrations (3 applied)
+1. `20260521101927_init` — 9 tables
+2. `20260521125851_add_shipping_address` — `orders.shipping_address` text column
+3. `20260521152633_add_address_type_field` — `addresses.type` varchar column
+
+### Schema Models
 `User` · `Category` · `Product` · `ProductImage` · `ProductSpec` · `Address` · `CartItem` · `Order` · `OrderItem` · `WishlistItem`
 
 ### Seed Data
 - **6 categories**: Mobiles, Electronics, Fashion, Home & Furniture, Appliances, Books
-- **14 products** with 2–3 images + specs each
+- **14 products** with images + specs
+
+### DB Persistence Status
+| Table | Populated by |
+|---|---|
+| `users` | `POST /auth/register` |
+| `orders` + `order_items` | `POST /orders` (checkout) |
+| `wishlist_items` | Toggle heart (logged-in only) |
+| `addresses` | Checkout address form (logged-in saves to DB) |
+| `categories`, `products`, etc. | `pnpm prisma:seed` |
+| `cart_items` | **Intentionally client-side** (Zustand/localStorage) |
 
 ---
 
-## API Endpoints (All Working)
+## Key Bugs Fixed (Important for Future Work)
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| GET | `/health` | — | Health check |
-| GET | `/api/v1/categories` | — | All categories with product count |
-| GET | `/api/v1/products` | — | Paginated products (filters, search, sort) |
-| GET | `/api/v1/products/:slug` | — | Product detail + related |
-| POST | `/api/v1/auth/register` | — | Create account, returns JWT |
-| POST | `/api/v1/auth/login` | — | Login, returns JWT |
-| GET | `/api/v1/auth/me` | JWT | Current user profile |
-| POST | `/api/v1/orders` | JWT | Place order (transactional) |
-| GET | `/api/v1/orders/my` | JWT | User's order history |
-| GET | `/api/v1/orders/:id` | JWT | Single order detail |
-| GET | `/api/v1/wishlist` | JWT | Get wishlist products |
-| POST | `/api/v1/wishlist/:productId` | JWT | Toggle wishlist (add/remove) |
-
-### Product Query Params
-`category` · `q` (search) · `minPrice` · `maxPrice` · `brand` · `rating` · `sort` (price_asc/price_desc/rating/newest) · `page` · `limit`
+| Bug | Fix |
+|---|---|
+| **Hydration mismatch** (cart badge, heart icon, user dropdown) | Added `mounted` state in Header, MobileNav, ProductCard — Zustand persist reads localStorage only after client hydration |
+| **Neon DB connection failure on server start** | `db.ts` now passes `datasourceUrl: env.DATABASE_URL` directly to PrismaClient instead of relying on `process.env` (module hoisting issue with ts-node) |
+| **`addresses` table always empty** | Route was commented out — now mounted and fully implemented |
 
 ---
 
-## Frontend Features Implemented
+## Phase Status
 
-### Product Discovery
-- Homepage with product grid (2–4 columns responsive)
-- Category nav strip with active state
-- Filter sidebar: category, price range, rating, brand, sort
-- Full-text search with **300ms debounce**
-- Pagination
-- Product card with discount badge + ❤ wishlist button
-
-### Product Detail Page
-- Image carousel with thumbnails + zoom
-- Expandable specifications table
-- Quantity selector (capped at stock)
-- Available offers section
-- Pincode delivery check
-- ❤ Heart button (syncs with wishlist store)
-- ADD TO CART + BUY NOW buttons
-
-### Shopping Cart
-- Zustand store with `localStorage` persistence
-- Qty +/- controls, Remove button
-- Live price summary (subtotal, discount, delivery, total)
-- FREE delivery above ₹500
-- Cart item count badge in header
-
-### Checkout Flow (2-step)
-- **Step 1** `/checkout/address`: Full address form
-  - Home / Work address type toggle
-  - Pincode auto-fill (city + state via postal API)
-  - Indian state dropdown
-- **Step 2** `/checkout/review`: Review + place order
-  - Shows address, items, price summary, COD label
-  - Places order via API with JWT
-- **Order success** `/order-success`: Confetti 🎉 + estimated delivery date + order summary
-
-### Orders
-- My Orders list with status badges (placed/confirmed/shipped/delivered/cancelled)
-- Clickable → Order detail page
-- Order detail: status progress tracker, items, address, payment, total
-
-### Authentication
-- Register: name, email, phone, password + **strength indicator** + confirm password
-- Login: email, password, show/hide toggle
-- Both pages: Flipkart-style split blue/white layout
-- `?redirect=` param — returns to original protected page after login
-- JWT stored in `localStorage` + `cookie` (for middleware)
-- Header: shows first name + dropdown (My Orders · Wishlist · Logout) when logged in
-
-### Wishlist
-- ❤ button on every ProductCard + PDP
-- Guest wishlist stored in `localStorage` (no login required)
-- Syncs with server when logged in
-- Wishlist page: product grid, Remove, Move to Cart
-
-### Route Protection (Next.js Middleware)
-- `/checkout/*`, `/orders/*`, `/wishlist/*` → redirect to `/auth/login?redirect=<path>`
-
-### UI/UX
-- Sticky blue header with search
-- Mobile bottom nav (Home / Categories / Cart / Account)
-- Dark footer with columns, social icons, copyright
-- Custom 404 not-found page
-- Toast notifications (`react-hot-toast`) throughout
-- Skeleton loaders on product grid + order list
+| Phase | Status |
+|---|---|
+| 0 — Setup & Scaffolding | ✅ Complete |
+| 1 — Products & Categories API | ✅ Complete |
+| 2 — Frontend Product Listing | ✅ Complete |
+| 3 — Product Detail Page | ✅ Complete |
+| 4 — Shopping Cart | ✅ Complete |
+| 5 — Checkout & Orders | ✅ Complete |
+| 6 — Authentication | ✅ Complete |
+| 7 — Wishlist, Footer, Polish | ✅ Complete |
+| 8 — Responsive Design | ✅ Complete (mobile nav, header hamburger, grids) |
+| 9 — Testing & QA | ✅ Backend: 30 tests passing. Frontend: component tests written |
+| 10 — Deployment | ⏳ Not started (Vercel + Render/Railway) |
 
 ---
 
-## What's NOT Yet Implemented (Known Gaps)
+## Design Decisions
 
-| Feature | Phase | Notes |
-|---|---|---|
-| Email notifications (order confirmation) | 7.3 | Requires SMTP credentials; `nodemailer` is a dependency |
-| Full mobile audit | 8 | Mobile nav done; header hamburger menu not built |
-| Backend tests | 9 | Jest + Supertest — not started |
-| Deployment | 10 | Vercel + Railway — not started |
-
----
-
-## Key Design Decisions
-
-| Decision | Choice | Rationale |
-|---|---|---|
-| DB hosting | Neon (serverless PostgreSQL) | No Docker needed, free tier |
-| Package manager | pnpm | Faster, disk-efficient, best monorepo support |
-| Naming | "EasyShop" everywhere | User preference |
-| Cart persistence | Zustand + `localStorage` | Works for guests; merged on login |
-| Wishlist for guests | Zustand + `localStorage` (no API) | API only called when logged in |
-| Auth cookie | Set on login/register for middleware | localStorage not accessible in Next.js middleware |
-| Delivery charge | Free if total ≥ ₹500, else ₹40 | Flipkart-style incentive |
-
----
+| Decision | Choice |
+|---|---|
+| Cart persistence | Zustand + localStorage (guest-friendly; merges on login) |
+| Wishlist for guests | localStorage only; API syncs on login |
+| Auth tokens | localStorage + cookie (cookie needed for Next.js middleware) |
+| Address persistence | DB (logged-in users); sessionStorage (guests, checkout only) |
+| Delivery charge | Free ≥ ₹500, else ₹40 |
+| Neon cold-start | `connect_timeout=30&pool_timeout=30` in DATABASE_URL |
 
 ## Color Palette
 
-| Name | Hex |
-|---|---|
-| Primary Blue | `#2874f0` |
-| Yellow Accent | `#FFE500` |
-| Green (Discount/Success) | `#388e3c` |
-| Orange (CTA/Offers) | `#fb641b` |
-| Background | `#f1f3f6` |
-| Card Background | `#ffffff` |
-| Footer Background | `#172337` |
-| Body text | `#212121` |
-| Secondary text | `#878787` |
-
----
-
-*Last updated: 2026-05-21 — All plan gaps through Phase 7 resolved. Ready for Phase 8 (full mobile polish) or Phase 9 (testing).*
+`#2874f0` (primary blue) · `#FFE500` (yellow) · `#388e3c` (green/discount) · `#fb641b` (orange/CTA) · `#f1f3f6` (page bg) · `#172337` (footer) · `#212121` (body text)

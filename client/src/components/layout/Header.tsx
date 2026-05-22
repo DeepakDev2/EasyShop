@@ -50,6 +50,7 @@ export default function Header() {
     }
   }, [accountOpen])
 
+
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     setShowMobileSearch(false)
@@ -163,9 +164,6 @@ export default function Header() {
               <User size={16} /> Login
             </Link>
           )}
-          <button className="flex items-center gap-1 hover:text-yellow-300 transition-colors">
-            More <ChevronDown size={14} />
-          </button>
         </nav>
 
         {/* Mobile: hamburger (shows account links) */}

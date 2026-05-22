@@ -47,7 +47,7 @@ export const useWishlistStore = create<WishlistStore>()(
           // Reconcile with server truth
           set(state => ({
             ids: added
-              ? [...new Set([...state.ids, productId])]
+              ? Array.from(new Set([...state.ids, productId]))
               : state.ids.filter(id => id !== productId),
           }))
           return added
