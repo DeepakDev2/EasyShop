@@ -2,36 +2,36 @@ import Link from 'next/link'
 import { Mail, Phone } from 'lucide-react'
 
 const SOCIAL = [
-  { icon: '𝕏', label: 'Twitter', href: '#' },
-  { icon: '📘', label: 'Facebook', href: '#' },
-  { icon: '📸', label: 'Instagram', href: '#' },
-  { icon: '▶️', label: 'YouTube', href: '#' },
+  { icon: '𝕏', label: 'Twitter', href: 'https://x.com' },
+  { icon: '📘', label: 'Facebook', href: 'https://facebook.com' },
+  { icon: '📸', label: 'Instagram', href: 'https://instagram.com' },
+  { icon: '▶️', label: 'YouTube', href: 'https://youtube.com' },
 ]
 
 const FOOTER_LINKS = {
   'About EasyShop': [
-    { label: 'About Us', href: '#' },
-    { label: 'Careers', href: '#' },
-    { label: 'Press', href: '#' },
-    { label: 'Corporate Information', href: '#' },
+    { label: 'About Us', href: '/about?tab=about' },
+    { label: 'Careers', href: '/about?tab=careers' },
+    { label: 'Press', href: '/about?tab=press' },
+    { label: 'Corporate Information', href: '/about?tab=corporate' },
   ],
   'Help': [
-    { label: 'Payments', href: '#' },
-    { label: 'Shipping', href: '#' },
-    { label: 'Cancellation & Returns', href: '#' },
-    { label: 'FAQ', href: '#' },
+    { label: 'Payments', href: '/help?cat=payments' },
+    { label: 'Shipping', href: '/help?cat=shipping' },
+    { label: 'Cancellation & Returns', href: '/help?cat=returns' },
+    { label: 'FAQ', href: '/help?cat=faq' },
   ],
   'Policy': [
-    { label: 'Return Policy', href: '#' },
-    { label: 'Terms Of Use', href: '#' },
-    { label: 'Security', href: '#' },
-    { label: 'Privacy', href: '#' },
+    { label: 'Return Policy', href: '/policy?tab=return' },
+    { label: 'Terms Of Use', href: '/policy?tab=terms' },
+    { label: 'Security', href: '/policy?tab=security' },
+    { label: 'Privacy', href: '/policy?tab=privacy' },
   ],
   'Social': [
-    { label: 'Facebook', href: '#' },
-    { label: 'Twitter', href: '#' },
-    { label: 'YouTube', href: '#' },
-    { label: 'Instagram', href: '#' },
+    { label: 'Facebook', href: 'https://facebook.com' },
+    { label: 'Twitter', href: 'https://x.com' },
+    { label: 'YouTube', href: 'https://youtube.com' },
+    { label: 'Instagram', href: 'https://instagram.com' },
   ],
 }
 
@@ -51,7 +51,7 @@ export default function Footer() {
             </p>
             <div className="flex gap-3 mt-3">
               {SOCIAL.map(s => (
-                <a key={s.label} href={s.href} aria-label={s.label}
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}
                   className="text-gray-400 hover:text-white transition-colors text-lg">{s.icon}</a>
               ))}
             </div>
