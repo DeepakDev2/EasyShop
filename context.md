@@ -22,7 +22,7 @@
 | Database | PostgreSQL on **Neon** (serverless, free tier — auto-pauses after 5 min idle) |
 | ORM | Prisma v5 |
 | Auth | JWT (`jsonwebtoken` + `bcryptjs`) |
-| Email | Gmail SMTP via `nodemailer` (App Password in `server/.env`) |
+| Email | Resend (API key in `server/.env`) |
 | Validation | Zod (server-side) |
 | Testing | Jest + Supertest (backend), Jest + RTL (frontend) |
 
@@ -210,11 +210,10 @@ EasyShop/
 
 ## Email
 
-- **Provider**: Gmail SMTP via `nodemailer` (`smtp.gmail.com:587`, STARTTLS)
-- **Auth**: Gmail App Password (generate at https://myaccount.google.com/apppasswords)
+- **Provider**: Resend (https://resend.com)
 - **Trigger**: fire-and-forget after `POST /orders` — sends order confirmation HTML email
 - **Template**: inline HTML in `server/src/utils/email.ts` (`buildOrderEmailHTML`) — Flipkart-style branding
-- **Config vars**: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` in `server/.env`
+- **Config vars**: `RESEND_API_KEY`, `RESEND_FROM` in `server/.env`
 - **CTA link**: uses `env.CLIENT_URL` (not hardcoded localhost)
 
 ---
