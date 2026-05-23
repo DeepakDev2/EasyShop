@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 
@@ -253,7 +254,7 @@ async function main() {
       data: {
         name: p.name, slug: p.slug, description: p.description,
         price: p.price, originalPrice: p.originalPrice,
-        stock: p.stock, rating: p.rating, ratingCount: p.ratingCount,
+        stock: p.stock, rating: 0, ratingCount: 0,
         brand: p.brand, categoryId: catMap[p.categorySlug],
         images: {
           create: p.images.map((url, i) => ({ url, isPrimary: i === 0, displayOrder: i })),

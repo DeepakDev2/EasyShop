@@ -1,7 +1,15 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
+import { env } from '../config/env'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM = process.env.RESEND_FROM ?? 'onboarding@resend.dev'
+const transporter = nodemailer.createTransport({
+  host: env.EMAIL_HOST,
+  port: env.EMAIL_PORT,
+  secure: false, // STARTTLS on port 587
+  auth: {
+    user: env.EMAIL_USER,
+    pass: env.EMAIL_PASS,
+  },
+})
 
 export interface OrderEmailData {
   orderNumber: string
@@ -25,8 +33,8 @@ export const sendOrderConfirmation = async (data: OrderEmailData): Promise<void>
 
   const html = buildOrderEmailHTML(data, deliveryDate)
 
-  await resend.emails.send({
-    from: `EasyShop <${FROM}>`,
+  await transporter.sendMail({
+    from: env.EMAIL_FROM,
     to: data.userEmail,
     subject: `✅ Order Confirmed! #${data.orderNumber} — EasyShop`,
     html,
@@ -158,7 +166,7 @@ function buildOrderEmailHTML(data: OrderEmailData, deliveryDate: string): string
 
               <!-- CTA -->
               <div style="text-align:center; margin-top:8px;">
-                <a href="http://localhost:3000/orders"
+                <a href="${env.CLIENT_URL}/orders"
                    style="background:#fb641b; color:#ffffff; text-decoration:none; font-size:14px; font-weight:700; padding:14px 36px; border-radius:4px; display:inline-block; letter-spacing:0.3px;">
                   VIEW MY ORDERS →
                 </a>

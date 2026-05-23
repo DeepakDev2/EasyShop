@@ -40,6 +40,7 @@ import wishlistRoutes from './routes/wishlist.routes'
 import addressRoutes from './routes/address.routes'
 import cartRoutes from './routes/cart.routes'
 import pincodeRoutes from './routes/pincode.routes'
+import reviewRoutes from './routes/review.routes'
 
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/products', productRoutes)
@@ -49,6 +50,7 @@ app.use('/api/v1/wishlist', wishlistRoutes)
 app.use('/api/v1/addresses', addressRoutes)
 app.use('/api/v1/cart', cartRoutes)
 app.use('/api/v1/pincode', pincodeRoutes)
+app.use('/api/v1/reviews', reviewRoutes)
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

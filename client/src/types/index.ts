@@ -95,6 +95,33 @@ export type Order = {
   orderItems: OrderItem[]
 }
 
+export type Review = {
+  id: number
+  userId: number
+  productId: number
+  rating: number
+  title: string | null
+  body: string
+  verifiedPurchase: boolean
+  createdAt: string
+  updatedAt: string
+  user: { name: string }
+}
+
+export type ReviewsResponse = {
+  reviews: Review[]
+  total: number
+  page: number
+  limit: number
+  ratingBreakdown: Record<number, number>
+}
+
+export type CanReviewResponse = {
+  canReview: boolean
+  hasReviewed: boolean
+  existingReview: Review | null
+}
+
 export type WishlistItem = {
   id: number
   productId: number
