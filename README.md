@@ -6,7 +6,7 @@ A full-stack e-commerce platform built with Next.js, Express.js, and PostgreSQL 
 
 <div align="center">
   <!-- TODO: Replace the 'src' links below with your actual screenshot URLs -->
-  <img src="https://drive.google.com/file/d/1o0sLCe36golKgKiAi8UL0lN3_e0W2I7X/view" alt="Home Page" width="800" />
+  <img src="https://github.com/DeepakDev2/EasyShop/blob/main/screenshots/home.png?raw=true" alt="Home Page" width="800" />
   <p><i>Home Page</i></p>
 </div>
 
@@ -14,8 +14,8 @@ A full-stack e-commerce platform built with Next.js, Express.js, and PostgreSQL 
 
 <div align="center">
   <!-- TODO: Replace the 'src' links below with your actual screenshot URLs -->
-  <img src="https://via.placeholder.com/400x300?text=Product+Details" alt="Product Page" width="395" />
-  <img src="https://via.placeholder.com/400x300?text=Shopping+Cart" alt="Cart Page" width="395" />
+  <img src="https://github.com/DeepakDev2/EasyShop/blob/main/screenshots/wishlist.png?raw=true" alt="Product Page" width="395" />
+  <img src="https://github.com/DeepakDev2/EasyShop/blob/main/screenshots/cart.png?raw=true" alt="Cart Page" width="395" />
 </div>
 
 <br />
