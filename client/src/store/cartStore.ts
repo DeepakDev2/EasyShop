@@ -108,13 +108,9 @@ export const useCartStore = create<CartStore>()(
       },
 
       addItem: async (product, qty = 1) => {
-        if (isLoggedIn()) {
-          try {
-            await api.post('/cart', { productId: product.id, quantity: qty })
-            await get().loadFromServer()
-            return
-          } catch { /* fall through to local */ }
-        }
+        const previousItems = get().items
+
+        // 1. Optimistic update
         set(state => {
           const existing = state.items.find(i => i.product.id === product.id)
           if (existing) {
@@ -128,33 +124,71 @@ export const useCartStore = create<CartStore>()(
           }
           return { items: [...state.items, { product: toCartProduct(product), qty }] }
         })
+
+        // 2. Background sync
+        if (isLoggedIn()) {
+          try {
+            const res = await api.post('/cart', { productId: product.id, quantity: qty })
+            const serverItem = res.data.data
+            if (serverItem?.id) {
+              set(state => ({
+                items: state.items.map(i =>
+                  i.product.id === product.id ? { ...i, cartItemId: serverItem.id } : i
+                ),
+              }))
+            }
+          } catch {
+            // Rollback on failure
+            set({ items: previousItems })
+          }
+        }
       },
 
       updateQty: async (productId, qty) => {
         if (qty < 1) { await get().removeItem(productId); return }
         const entry = get().items.find(i => i.product.id === productId)
-        if (isLoggedIn() && entry?.cartItemId) {
-          try {
-            await api.put(`/cart/${entry.cartItemId}`, { quantity: qty })
-            await get().loadFromServer()
-            return
-          } catch { /* fall through */ }
-        }
+        if (!entry) return
+
+        const previousQty = entry.qty
+
+        // 1. Optimistic update
         set(state => ({
           items: state.items.map(i => i.product.id === productId ? { ...i, qty } : i),
         }))
+
+        // 2. Background sync
+        if (isLoggedIn() && entry.cartItemId) {
+          try {
+            await api.put(`/cart/${entry.cartItemId}`, { quantity: qty })
+          } catch {
+            // Rollback on failure
+            set(state => ({
+              items: state.items.map(i => i.product.id === productId ? { ...i, qty: previousQty } : i),
+            }))
+            await get().loadFromServer()
+          }
+        }
       },
 
       removeItem: async (productId) => {
         const entry = get().items.find(i => i.product.id === productId)
-        if (isLoggedIn() && entry?.cartItemId) {
+        if (!entry) return
+
+        const previousItems = get().items
+
+        // 1. Optimistic update
+        set(state => ({ items: state.items.filter(i => i.product.id !== productId) }))
+
+        // 2. Background sync
+        if (isLoggedIn() && entry.cartItemId) {
           try {
             await api.delete(`/cart/${entry.cartItemId}`)
+          } catch {
+            // Rollback on failure
+            set({ items: previousItems })
             await get().loadFromServer()
-            return
-          } catch { /* fall through */ }
+          }
         }
-        set(state => ({ items: state.items.filter(i => i.product.id !== productId) }))
       },
 
       clearCart: async () => {

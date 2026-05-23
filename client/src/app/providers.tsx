@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/authStore'
 import { useCartStore } from '@/store/cartStore'
+import { useWishlistStore } from '@/store/wishlistStore'
 import api from '@/lib/api'
 import { setToken } from '@/lib/token'
 import NavigationProgress from '@/components/layout/NavigationProgress'
@@ -11,14 +12,18 @@ import NavigationProgress from '@/components/layout/NavigationProgress'
 function AuthValidator() {
   const { isLoggedIn, token, logout } = useAuthStore()
   const loadFromServer = useCartStore(s => s.loadFromServer)
+  const loadWishlist = useWishlistStore(s => s.load)
 
   useEffect(() => {
     if (!isLoggedIn || !token) return
     setToken(token)
     api.get('/auth/me')
-      .then(() => loadFromServer())
+      .then(() => {
+        loadFromServer()
+        loadWishlist()
+      })
       .catch(() => logout())
-  }, [isLoggedIn, token, logout, loadFromServer])
+  }, [isLoggedIn, token, logout, loadFromServer, loadWishlist])
 
   return null
 }

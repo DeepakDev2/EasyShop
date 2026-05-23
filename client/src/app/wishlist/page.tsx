@@ -22,7 +22,12 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!isLoggedIn) { router.push('/auth/login'); return }
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('easyshop_token'))
+    if (!isLoggedIn && !hasToken) {
+      router.push('/auth/login?redirect=%2Fwishlist')
+      return
+    }
+    if (!isLoggedIn) return
     api.get('/wishlist').then(r => setProducts(r.data.data)).finally(() => setLoading(false))
   }, [isLoggedIn, router])
 

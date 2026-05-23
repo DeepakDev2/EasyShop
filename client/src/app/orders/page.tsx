@@ -24,10 +24,14 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!isLoggedIn) { router.push('/auth/login'); return }
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('easyshop_token'))
+    if (!isLoggedIn && !hasToken) {
+      router.push('/auth/login?redirect=%2Forders')
+      return
+    }
+    if (!isLoggedIn) return
     api.get('/orders/my').then(r => setOrders(r.data.data)).finally(() => setLoading(false))
   }, [isLoggedIn, router])
-
   return (
     <div className="min-h-screen bg-[#f1f3f6]">
       <Header />

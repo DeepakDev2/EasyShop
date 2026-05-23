@@ -15,19 +15,19 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
       await login(email, password)
       toast.success('Welcome back! 🎉')
-      router.push(redirect)
+      setTimeout(() => {
+        window.location.href = redirect
+      }, 150)
     } catch (err: unknown) {
       toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Login failed')
     } finally { setLoading(false) }
   }
-
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #2874f0 0%, #1a5dc9 50%, #f1f3f6 50%)' }}>
       <div className="hidden md:flex flex-col justify-center px-16 w-2/5 text-white">

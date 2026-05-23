@@ -19,7 +19,6 @@ interface AuthStore {
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>
   logout: () => void
 }
-
 async function getGuestCart() {
   const { useCartStore } = await import('@/store/cartStore')
   return useCartStore.getState().items.map(i => ({ productId: i.product.id, quantity: i.qty }))
@@ -28,6 +27,11 @@ async function getGuestCart() {
 async function reloadCartFromServer() {
   const { useCartStore } = await import('@/store/cartStore')
   await useCartStore.getState().loadFromServer()
+}
+
+async function reloadWishlistFromServer() {
+  const { useWishlistStore } = await import('@/store/wishlistStore')
+  await useWishlistStore.getState().load()
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -47,6 +51,7 @@ export const useAuthStore = create<AuthStore>()(
         setToken(token)
         set({ user, token, isLoggedIn: true })
         await reloadCartFromServer()
+        await reloadWishlistFromServer()
       },
 
       register: async (name, email, password, phone) => {
@@ -61,8 +66,8 @@ export const useAuthStore = create<AuthStore>()(
         setToken(token)
         set({ user, token, isLoggedIn: true })
         await reloadCartFromServer()
+        await reloadWishlistFromServer()
       },
-
       logout: () => {
         clearToken()
         set({ user: null, token: null, isLoggedIn: false })

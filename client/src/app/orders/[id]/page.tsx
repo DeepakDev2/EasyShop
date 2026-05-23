@@ -28,7 +28,12 @@ export default function OrderDetailPage() {
   const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
-    if (!isLoggedIn) { router.push('/auth/login'); return }
+    const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('easyshop_token'))
+    if (!isLoggedIn && !hasToken) {
+      router.push(`/auth/login?redirect=%2Forders%2F${id}`)
+      return
+    }
+    if (!isLoggedIn) return
     api.get(`/orders/${id}`).then(r => setOrder(r.data.data)).catch(() => router.push('/orders')).finally(() => setLoading(false))
   }, [id, isLoggedIn, router])
 

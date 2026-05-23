@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { ProductFilters } from '@/types'
 
@@ -15,6 +16,41 @@ const RATINGS = [4, 3, 2]
 
 export default function FilterSidebar({ filters, onFilterChange }: Props) {
   const { data: categories = [] } = useCategories()
+
+  const [minPrice, setMinPrice] = useState<string>(filters.minPrice !== undefined ? String(filters.minPrice) : '')
+  const [maxPrice, setMaxPrice] = useState<string>(filters.maxPrice !== undefined ? String(filters.maxPrice) : '')
+
+  useEffect(() => {
+    setMinPrice(filters.minPrice !== undefined ? String(filters.minPrice) : '')
+  }, [filters.minPrice])
+
+  useEffect(() => {
+    setMaxPrice(filters.maxPrice !== undefined ? String(filters.maxPrice) : '')
+  }, [filters.maxPrice])
+
+  const handleMinPriceBlur = () => {
+    const val = minPrice.trim() !== '' ? Number(minPrice) : undefined
+    if (val !== filters.minPrice) {
+      onFilterChange({ minPrice: val, page: 1 })
+    }
+  }
+
+  const handleMaxPriceBlur = () => {
+    const val = maxPrice.trim() !== '' ? Number(maxPrice) : undefined
+    if (val !== filters.maxPrice) {
+      onFilterChange({ maxPrice: val, page: 1 })
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, field: 'min' | 'max') => {
+    if (e.key === 'Enter') {
+      if (field === 'min') {
+        handleMinPriceBlur()
+      } else {
+        handleMaxPriceBlur()
+      }
+    }
+  }
 
   const clearAll = () => onFilterChange({ category: undefined, minPrice: undefined, maxPrice: undefined, rating: undefined, sort: undefined, brand: undefined, q: undefined, page: 1 })
 
@@ -61,14 +97,18 @@ export default function FilterSidebar({ filters, onFilterChange }: Props) {
         <div className="flex gap-2">
           <input
             type="number" placeholder="Min" min={0}
-            value={filters.minPrice ?? ''}
-            onChange={e => onFilterChange({ minPrice: e.target.value ? +e.target.value : undefined, page: 1 })}
+            value={minPrice}
+            onChange={e => setMinPrice(e.target.value)}
+            onBlur={handleMinPriceBlur}
+            onKeyDown={e => handleKeyDown(e, 'min')}
             className="input-base w-1/2 text-xs"
           />
           <input
             type="number" placeholder="Max" min={0}
-            value={filters.maxPrice ?? ''}
-            onChange={e => onFilterChange({ maxPrice: e.target.value ? +e.target.value : undefined, page: 1 })}
+            value={maxPrice}
+            onChange={e => setMaxPrice(e.target.value)}
+            onBlur={handleMaxPriceBlur}
+            onKeyDown={e => handleKeyDown(e, 'max')}
             className="input-base w-1/2 text-xs"
           />
         </div>

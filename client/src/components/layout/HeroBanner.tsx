@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 const BANNERS = [
   {
@@ -14,6 +15,7 @@ const BANNERS = [
     emoji: '⚡',
     pill: 'SALE LIVE',
     pillColor: '#e94560',
+    link: '/?category=electronics',
   },
   {
     id: 2,
@@ -26,6 +28,7 @@ const BANNERS = [
     emoji: '👗',
     pill: 'NEW ARRIVALS',
     pillColor: '#38ef7d',
+    link: '/?category=fashion',
   },
   {
     id: 3,
@@ -38,6 +41,7 @@ const BANNERS = [
     emoji: '🏠',
     pill: 'TRENDING',
     pillColor: '#fc4a1a',
+    link: '/?category=appliances',
   },
   {
     id: 4,
@@ -50,6 +54,7 @@ const BANNERS = [
     emoji: '📚',
     pill: 'HOT DEAL',
     pillColor: '#FFE500',
+    link: '/?category=books',
   },
 ]
 
@@ -85,9 +90,11 @@ export default function HeroBanner() {
           </span>
           <h2 className="text-3xl font-black text-white leading-tight">{banner.headline}</h2>
           <p className="text-white/80 text-base">{banner.sub}</p>
-          <button className="mt-2 bg-white text-gray-900 font-bold text-sm px-6 py-2.5 rounded-sm hover:bg-gray-100 transition-colors">
-            Shop Now →
-          </button>
+          <Link href={banner.link} className="inline-block mt-2">
+            <button className="bg-white text-gray-900 font-bold text-sm px-6 py-2.5 rounded-sm hover:bg-gray-100 transition-colors">
+              Shop Now →
+            </button>
+          </Link>
         </div>
         <div className="text-8xl select-none hidden sm:block" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}>
           {banner.emoji}

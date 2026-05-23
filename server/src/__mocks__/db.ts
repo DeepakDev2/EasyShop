@@ -32,6 +32,15 @@ const prismaMock = {
     delete: jest.fn(),
     findMany: jest.fn(),
   },
+  cartItem: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
+    findMany: jest.fn(),
+  },
   $transaction: jest.fn(),
 }
 

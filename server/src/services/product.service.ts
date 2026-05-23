@@ -83,3 +83,121 @@ export const getDistinctBrands = async (categorySlug?: string) => {
   })
   return results.map(r => r.brand).filter(Boolean)
 }
+
+import { CreateProductInput, UpdateProductInput } from '../schemas/product.schema'
+import { slugify } from '../utils/helpers'
+import { createError } from '../middleware/errorHandler'
+
+export const createProduct = async (data: CreateProductInput) => {
+  const slug = data.slug || slugify(data.name)
+  const existing = await prisma.product.findUnique({ where: { slug } })
+  if (existing) throw createError('Product slug already exists', 409, 'SLUG_EXISTS')
+
+  const { images, specs, ...rest } = data
+
+  const product = await prisma.$transaction(async (tx) => {
+    return tx.product.create({
+      data: {
+        ...rest,
+        slug,
+        images: images?.length ? {
+          create: images.map((img, idx) => ({
+            url: img.url,
+            isPrimary: img.isPrimary ?? false,
+            displayOrder: img.displayOrder ?? idx,
+          }))
+        } : undefined,
+        specs: specs?.length ? {
+          create: specs.map((spec, idx) => ({
+            specKey: spec.specKey,
+            specValue: spec.specValue,
+            displayOrder: spec.displayOrder ?? idx,
+          }))
+        } : undefined,
+      },
+      include: {
+        category: true,
+        images: { orderBy: { displayOrder: 'asc' } },
+        specs: { orderBy: { displayOrder: 'asc' } },
+      }
+    })
+  })
+
+  return formatProduct(product)
+}
+
+export const updateProduct = async (id: number, data: UpdateProductInput) => {
+  const existing = await prisma.product.findUnique({ where: { id } })
+  if (!existing) throw createError('Product not found', 404, 'NOT_FOUND')
+
+  let slug = data.slug
+  if (data.name && !slug) {
+    slug = slugify(data.name)
+  }
+
+  if (slug && slug !== existing.slug) {
+    const duplicate = await prisma.product.findUnique({ where: { slug } })
+    if (duplicate) throw createError('Product slug already exists', 409, 'SLUG_EXISTS')
+  }
+
+  const { images, specs, ...rest } = data
+
+  const product = await prisma.$transaction(async (tx) => {
+    if (images !== undefined) {
+      await tx.productImage.deleteMany({ where: { productId: id } })
+    }
+    if (specs !== undefined) {
+      await tx.productSpec.deleteMany({ where: { productId: id } })
+    }
+
+    return tx.product.update({
+      where: { id },
+      data: {
+        ...rest,
+        ...(slug && { slug }),
+        ...(images !== undefined && {
+          images: {
+            create: images.map((img, idx) => ({
+              url: img.url,
+              isPrimary: img.isPrimary ?? false,
+              displayOrder: img.displayOrder ?? idx,
+            }))
+          }
+        }),
+        ...(specs !== undefined && {
+          specs: {
+            create: specs.map((spec, idx) => ({
+              specKey: spec.specKey,
+              specValue: spec.specValue,
+              displayOrder: spec.displayOrder ?? idx,
+            }))
+          }
+        }),
+      },
+      include: {
+        category: true,
+        images: { orderBy: { displayOrder: 'asc' } },
+        specs: { orderBy: { displayOrder: 'asc' } },
+      }
+    })
+  })
+
+  return formatProduct(product)
+}
+
+export const deleteProduct = async (id: number) => {
+  const existing = await prisma.product.findUnique({ where: { id } })
+  if (!existing) throw createError('Product not found', 404, 'NOT_FOUND')
+
+  const product = await prisma.product.update({
+    where: { id },
+    data: { isActive: false },
+    include: {
+      category: true,
+      images: { orderBy: { displayOrder: 'asc' } },
+      specs: { orderBy: { displayOrder: 'asc' } },
+    }
+  })
+
+  return formatProduct(product)
+}

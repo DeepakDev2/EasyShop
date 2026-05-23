@@ -30,7 +30,6 @@ export default function RegisterPage() {
 
   const strength = getStrength(form.password)
   const passwordsMatch = form.password === form.confirm && form.confirm.length > 0
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (form.password !== form.confirm) { toast.error('Passwords do not match'); return }
@@ -38,12 +37,13 @@ export default function RegisterPage() {
     try {
       await register(form.name, form.email, form.password, form.phone || undefined)
       toast.success('Account created! Welcome to EasyShop 🎉')
-      router.push(redirect)
+      setTimeout(() => {
+        window.location.href = redirect
+      }, 150)
     } catch (err: unknown) {
       toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Registration failed')
     } finally { setLoading(false) }
   }
-
   return (
     <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #2874f0 0%, #1a5dc9 50%, #f1f3f6 50%)' }}>
       <div className="hidden md:flex flex-col justify-center px-16 w-2/5 text-white">

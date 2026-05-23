@@ -32,3 +32,22 @@ export const getBrands = asyncHandler(async (req: Request, res: Response) => {
   const brands = await productService.getDistinctBrands(category as string | undefined)
   res.json({ success: true, data: brands })
 })
+
+export const createProduct = asyncHandler(async (req: Request, res: Response) => {
+  const result = await productService.createProduct(req.body)
+  res.status(201).json({ success: true, data: result })
+})
+
+export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  if (isNaN(id)) throw createError('Invalid product ID', 400, 'BAD_REQUEST')
+  const result = await productService.updateProduct(id, req.body)
+  res.json({ success: true, data: result })
+})
+
+export const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id)
+  if (isNaN(id)) throw createError('Invalid product ID', 400, 'BAD_REQUEST')
+  const result = await productService.deleteProduct(id)
+  res.json({ success: true, data: result })
+})
