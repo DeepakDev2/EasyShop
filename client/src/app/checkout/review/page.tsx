@@ -11,7 +11,9 @@ import { formatPrice } from '@/lib/utils'
 import api from '@/lib/api'
 import { Package, MapPin } from 'lucide-react'
 
-export default function ReviewPage() {
+import { Suspense } from 'react'
+
+function ReviewPageContent() {
   const router = useRouter()
   const { items, total, discount, subtotal, clearCart } = useCartStore()
   const { isLoggedIn } = useAuthStore()
@@ -125,5 +127,13 @@ export default function ReviewPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function ReviewPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f1f3f6]" />}>
+      <ReviewPageContent />
+    </Suspense>
   )
 }

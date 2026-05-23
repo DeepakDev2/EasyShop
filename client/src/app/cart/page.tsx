@@ -6,7 +6,9 @@ import CartItemCard from '@/components/cart/CartItem'
 import PriceSummary from '@/components/cart/PriceSummary'
 import { useCartStore } from '@/store/cartStore'
 
-export default function CartPage() {
+import { Suspense } from 'react'
+
+function CartPageContent() {
   const { items } = useCartStore()
 
   return (
@@ -59,5 +61,13 @@ export default function CartPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function CartPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f1f3f6]" />}>
+      <CartPageContent />
+    </Suspense>
   )
 }

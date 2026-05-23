@@ -17,7 +17,9 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-700',
 }
 
-export default function OrdersPage() {
+import { Suspense } from 'react'
+
+function OrdersPageContent() {
   const router = useRouter()
   const { isLoggedIn } = useAuthStore()
   const [orders, setOrders] = useState<any[]>([])
@@ -91,5 +93,13 @@ export default function OrdersPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f1f3f6]" />}>
+      <OrdersPageContent />
+    </Suspense>
   )
 }

@@ -25,7 +25,9 @@ const EMPTY_FORM: AddressForm = {
   fullName: '', phone: '', line1: '', line2: '', city: '', state: '', pincode: '', type: 'home',
 }
 
-export default function AddressPage() {
+import { Suspense } from 'react'
+
+function AddressPageContent() {
   const router = useRouter()
   const { items } = useCartStore()
   const { isLoggedIn } = useAuthStore()
@@ -292,5 +294,13 @@ export default function AddressPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function AddressPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f1f3f6]" />}>
+      <AddressPageContent />
+    </Suspense>
   )
 }

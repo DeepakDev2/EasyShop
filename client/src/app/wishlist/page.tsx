@@ -13,7 +13,9 @@ import { formatPrice } from '@/lib/utils'
 import api from '@/lib/api'
 import { Product } from '@/types'
 
-export default function WishlistPage() {
+import { Suspense } from 'react'
+
+function WishlistPageContent() {
   const router = useRouter()
   const { isLoggedIn } = useAuthStore()
   const { toggle } = useWishlistStore()
@@ -100,5 +102,13 @@ export default function WishlistPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function WishlistPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f1f3f6]" />}>
+      <WishlistPageContent />
+    </Suspense>
   )
 }
