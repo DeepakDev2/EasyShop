@@ -321,9 +321,20 @@ export default function ProductDetailPage() {
               <div className="flex flex-col items-center justify-center min-w-[90px]">
                 <span className="text-5xl font-bold text-gray-900">{product.rating.toFixed(1)}</span>
                 <div className="flex mt-1">
-                  {[1,2,3,4,5].map(s => (
-                    <Star key={s} size={14} className={s <= Math.round(product.rating) ? 'fill-[#388e3c] text-[#388e3c]' : 'text-gray-300'} />
-                  ))}
+                  {[1,2,3,4,5].map(s => {
+                    const full = s <= Math.floor(product.rating)
+                    const half = !full && s === Math.ceil(product.rating) && (product.rating % 1) >= 0.25
+                    return (
+                      <span key={s} className="relative inline-block">
+                        <Star size={14} className="text-gray-300" />
+                        {(full || half) && (
+                          <span className="absolute inset-0 overflow-hidden" style={{ width: full ? '100%' : '50%' }}>
+                            <Star size={14} className="fill-[#388e3c] text-[#388e3c]" />
+                          </span>
+                        )}
+                      </span>
+                    )
+                  })}
                 </div>
                 <span className="text-xs text-gray-400 mt-1">{product.ratingCount.toLocaleString('en-IN')} ratings</span>
               </div>
