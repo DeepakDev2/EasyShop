@@ -31,5 +31,5 @@ export const getWishlist = async (userId: number) => {
       },
     },
   })
-  return items.map(i => i.product)
+  return items.map((i: any) => i.product)
 }

@@ -81,7 +81,7 @@ export const getDistinctBrands = async (categorySlug?: string) => {
   const results = await prisma.product.findMany({
     where, select: { brand: true }, distinct: ['brand'], orderBy: { brand: 'asc' },
   })
-  return results.map(r => r.brand).filter(Boolean)
+  return results.map((r: any) => r.brand).filter(Boolean)
 }
 
 import { CreateProductInput, UpdateProductInput } from '../schemas/product.schema'
@@ -95,7 +95,7 @@ export const createProduct = async (data: CreateProductInput) => {
 
   const { images, specs, ...rest } = data
 
-  const product = await prisma.$transaction(async (tx) => {
+  const product = await prisma.$transaction(async (tx: any) => {
     return tx.product.create({
       data: {
         ...rest,
@@ -142,7 +142,7 @@ export const updateProduct = async (id: number, data: UpdateProductInput) => {
 
   const { images, specs, ...rest } = data
 
-  const product = await prisma.$transaction(async (tx) => {
+  const product = await prisma.$transaction(async (tx: any) => {
     if (images !== undefined) {
       await tx.productImage.deleteMany({ where: { productId: id } })
     }

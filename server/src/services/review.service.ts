@@ -51,7 +51,7 @@ export const getProductReviews = async (productId: number, page: number, limit: 
     _count: { rating: true },
   })
   const ratingBreakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-  breakdown.forEach(b => { ratingBreakdown[b.rating] = b._count.rating })
+  breakdown.forEach((b: any) => { ratingBreakdown[b.rating] = b._count.rating })
 
   return { reviews, total, page, limit, ratingBreakdown }
 }
